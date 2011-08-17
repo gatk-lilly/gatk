@@ -1,23 +1,23 @@
 #!/bin/bash
 
-PWD=`pwd`
-
 export JAVA_HOME=$HOME/opt/jdk1.6.0_27/
 export PATH=$HOME/opt/apache-ant-1.8.2/bootstrap/bin:$HOME/opt/apache-ant-1.8.2/dist/bin:$HOME/opt/jdk1.6.0_27/bin:$HOME/opt/jdk1.6.0_27/db/bin:$HOME/opt/jdk1.6.0_27/jre/bin:$HOME/opt/git-1.7.6/bin:$HOME/opt/git-1.7.6/perl/blib/bin:$HOME/opt/bwa-0.5.9:$HOME/opt/samtools-0.1.17:$PATH
 alias ls='ls --color'
+
+cd $HOME
 
 if [ ! -e opt/ ]; then
 	mkdir opt
 fi
 
-if [ ! -e opt/jdk-6u27-linux-x64.bin ]; then
+if [ ! -e opt/jdk1.6.0_27/bin/javac ]; then
 	wget http://download.oracle.com/otn-pub/java/jdk/6u27-b07/jdk-6u27-linux-x64.bin -O opt/jdk-6u27-linux-x64.bin
 	chmod 777 opt/jdk-6u27-linux-x64.bin
 
 	cd opt
 	echo 'y' > answers.txt
 	./jdk-6u27-linux-x64.bin < answers.txt
-	cd $PWD
+	cd $HOME
 fi
 
 if [ ! -e opt/apache-ant-1.8.2-src.tar.gz ]; then
@@ -27,7 +27,7 @@ if [ ! -e opt/apache-ant-1.8.2-src.tar.gz ]; then
 
 	cd opt/apache-ant-1.8.2/
 	./build.sh
-	cd $PWD
+	cd $HOME
 fi
 
 if [ ! -e opt/git-1.7.6.tar.bz2 ]; then
@@ -35,10 +35,10 @@ if [ ! -e opt/git-1.7.6.tar.bz2 ]; then
 	bunzip2 -c opt/git-1.7.6.tar.bz2 | tar -C opt/ -xf -
 
 	cd opt/git-1.7.6
-	./configure --prefix=$PWD/ --without-curl
+	./configure --prefix=$HOME/ --without-curl
 	make
 	make install
-	cd $PWD
+	cd $HOME
 fi
 
 if [ ! -e opt/GATK-Lilly ]; then
@@ -46,7 +46,7 @@ if [ ! -e opt/GATK-Lilly ]; then
 
 	cd opt/GATK-Lilly
 	ant dist queue
-	cd $PWD
+	cd $HOME
 fi
 
 if [ ! -e opt/samtools-0.1.17.tar.bz2 ]; then
@@ -55,7 +55,7 @@ if [ ! -e opt/samtools-0.1.17.tar.bz2 ]; then
 
 	cd opt/samtools-0.1.17
 	make
-	cd $PWD
+	cd $HOME
 fi
 
 if [ ! -e opt/bwa-0.5.9.tar.bz2 ]; then
@@ -64,7 +64,7 @@ if [ ! -e opt/bwa-0.5.9.tar.bz2 ]; then
 
 	cd opt/bwa-0.5.9
 	make
-	cd $PWD
+	cd $HOME
 fi
 
 if [ ! -e opt/picard-tools-1.51.zip ]; then
@@ -77,7 +77,7 @@ if [ ! -e opt/jets3t-0.8.1.zip ]; then
 	unzip opt/jets3t-0.8.1.zip -d opt/
 
 	cd opt/jets3t-0.8.1
-	cd $PWD
+	cd $HOME
 fi
 
 echo "Done."

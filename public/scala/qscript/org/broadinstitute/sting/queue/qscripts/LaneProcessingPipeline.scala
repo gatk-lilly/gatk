@@ -31,6 +31,9 @@ class DataProcessingPipeline extends QScript {
   @Input(doc="The name of the final BAM", fullName="bamName", shortName="name", required=true)
   var bamName: String = _
 
+  @Input(doc="The number of threads to use", fullName="numThreads", shortName="threads", required=false)
+  var numThreads: Int = 1
+
   @Input(doc="The read group text to place in the BAM, without the extension", fullName="read_group", shortName="rg", required=true)
   var readGroupText: String = _
 
@@ -42,11 +45,11 @@ class DataProcessingPipeline extends QScript {
     this.isIntermediate = true
   }
 
-  case class bwa_aln_fastq (inFastq: File, outSai: File) extends CommandLineFunction with ExternalCommonArgs {
+  case class bwa_aln_fastq(inFastq: File, outSai: File, threads: Int) extends CommandLineFunction with ExternalCommonArgs {
     @Input(doc="fastq file to be aligned") var fastq = inFastq
     @Output(doc="output sai file for pair end") var sai = outSai
 
-    def commandLine = bwaPath + " aln -t 1 -q 5 " + reference + " " + fastq + " > " + sai
+    def commandLine = bwaPath + " aln -t " + threads + " -q 5 " + reference + " " + fastq + " > " + sai
 
     this.analysisName = queueLogDir + outSai + ".bwa_aln_fastq"
     this.jobName = queueLogDir + outSai + ".bwa_aln_fastq"
@@ -64,6 +67,24 @@ class DataProcessingPipeline extends QScript {
     this.memoryLimit = 2
     this.analysisName = queueLogDir + outBam + ".bwa_sam_pe"
     this.jobName = queueLogDir + outBam + ".bwa_sam_pe"
+  }
+
+  case class cleanSam (inBam: File, outBam: File) extends CleanSam with ExternalCommonArgs {
+    @Output(doc="output bam file") var bam = outBam
+    this.input = List(inBam)
+    this.output = outBam
+    this.analysisName = queueLogDir + outBam + ".cleansam"
+    this.jobName = queueLogDir + outBam + ".cleansam"
+    this.isIntermediate = false
+  }
+
+  case class sortSam (inSam: File, outBam: File, sortOrderP: SortOrder) extends SortSam with ExternalCommonArgs {
+    @Output(doc="output bai file") var bai = swapExt(outBam, ".bam", ".bai")
+    this.input = List(inSam)
+    this.output = outBam
+    this.sortOrder = sortOrderP
+    this.analysisName = queueLogDir + outBam + ".sortSam"
+    this.jobName = queueLogDir + outBam + ".sortSam"
     this.isIntermediate = false
   }
 
@@ -74,11 +95,15 @@ class DataProcessingPipeline extends QScript {
   def script = {
   	var saiFile1 = "intermediate/end1.sai";
   	var saiFile2 = "intermediate/end2.sai";
+	var samFile = "intermediate/aligned.sam";
+	var cleanedSamFile = "intermediate/cleaned.aligned.sam";
 	var bamFile = bamName;
 
-	add(bwa_aln_fastq(fastq1, saiFile1),
-	    bwa_aln_fastq(fastq2, saiFile2),
-	    bwa_sam_pe_fastq(fastq1, fastq2, saiFile1, saiFile2, bamFile)
+	add(bwa_aln_fastq(fastq1, saiFile1, numThreads),
+	    bwa_aln_fastq(fastq2, saiFile2, numThreads),
+	    bwa_sam_pe_fastq(fastq1, fastq2, saiFile1, saiFile2, samFile),
+	    cleanSam(samFile, cleanedSamFile),
+	    sortSam(cleanedSamFile, bamFile, SortOrder.coordinate)
 	)
   }
 }

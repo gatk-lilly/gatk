@@ -78,6 +78,7 @@ if [ ! -e opt/jets3t-0.8.1.zip ]; then
 	unzip opt/jets3t-0.8.1.zip -d opt/
 
 	cd opt/jets3t-0.8.1
+	chmod 777 bin/*.sh
 	cd $HOME
 fi
 

@@ -74,6 +74,10 @@ sub getArgs {
 
 my %args = &getArgs("s3_project_path" => undef);
 
+if ($args{'s3_project_path'} !~ /\/$/) {
+	$args{'s3_project_path'} .= '/';
+}
+
 my %records;
 
 my $project = &basename($args{'s3_project_path'});

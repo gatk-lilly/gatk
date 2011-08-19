@@ -71,6 +71,28 @@ sub getArgs {
 	return %args;
 }
 
+sub create_condor_submission_file {
+	my ($id, @args) = @_;
+
+	my $submission_file = ".$id.submit";
+
+	open(CSF, ">$submission_file");
+
+	print CSF "Universe = vanilla\n";
+	print CSF "Requirements = (OpSys =?= \"LINUX\") && (SlotID =?= "1")\n";
+	print CSF "Executable = /opt/GATK-Lilly/public/shell/process_one_paired_end_lane.sh\n";
+	print CSF "Arguments = " . join(" ", @args) . "\n";
+	print CSF "input   = /dev/null\n";
+	print CSF "output = .$id-$(Cluster).$(Process).out\n";
+	print CSF "error = .$id-$(Cluster).$(Process).err\n";
+	print CSF "notification = Never\n";
+	print CSF "Queue\n";
+
+	close(CSF);
+
+	return $submission_file;
+}
+
 my %args = &getArgs("s3_manifest" => undef, "s3_upload_bucket" => undef, "run" => 0);
 
 my @entries;
@@ -112,10 +134,12 @@ foreach my $entry (@entries) {
 	my $rgcn = "BGI";
 	my $rgdt = $entry{'date'};
 
-	my $cmd = "qsub -l hostname=ip-10-91-2-91.ec2.internal ~/opt/GATK-Lilly/public/shell/process_one_paired_end_lane.sh $rgid $rgsm $rglb $rgpu $rgpl $rgcn $rgdt $entry{'flowcell'} $entry{'lane'} $entry{'f1'} $entry{'f2'}";
+	#my $cmd = "qsub -l hostname=ip-10-91-2-91.ec2.internal ~/opt/GATK-Lilly/public/shell/process_one_paired_end_lane.sh $rgid $rgsm $rglb $rgpu $rgpl $rgcn $rgdt $entry{'flowcell'} $entry{'lane'} $entry{'f1'} $entry{'f2'}";
+	my @cmdargs = ($rgid, $rgsm, $rglb, $rgpu, $rgpl, $rgcn, $rgdt, $entry{'flowcell'}, $entry{'lane'}, $entry{'f1'}, $entry{'f2'});
 
-	print "Dispatching lane-level pipeline for $entry{'sample'} $rgid: $cmd\n";
+	print "Dispatching lane-level pipeline for $entry{'sample'} $rgid\n";
 	if ($args{'run'} == 1) {
-		system($cmd);
+		my $submission_file = &create_condor_submission_file($rgid, @cmdargs);
+		system("condor_submit $submission_file");
 	}
 }

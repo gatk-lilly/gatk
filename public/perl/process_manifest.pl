@@ -111,7 +111,7 @@ foreach my $entry (@entries) {
 	my $rgcn = "BGI";
 	my $rgdt = $entry{'date'};
 
-	my $cmd = "sh ~/opt/GATK-Lilly/public/shell/process_one_paired_end_lane.sh $entry{'f1'} $entry{'f2'} $bamName \"\@RG\\tID:$rgid\\tSM:$rgsm\\tLB:$rglb\\tPU:$rgpu\\tPL:$rgpl\\tCN:$rgcn\\tDT:$rgdt\" 16";
+	my $cmd = "~/opt/GATK-Lilly/public/shell/process_one_paired_end_lane.sh $rgid $rgsm $rglb $rgpu $rgpl $rgcn $rgdt $entry{'flowcell'} $entry{'lane'} $entry{'f1'} $entry{'f2'}";
 
 	print "$cmd\n";
 }

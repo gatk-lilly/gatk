@@ -85,13 +85,15 @@ sub create_condor_submission_file {
 	open(CSF, ">$submission_file");
 
 	print CSF "Universe = vanilla\n";
-	print CSF "Requirements = (OpSys =?= \"LINUX\") && (SlotID =?= \"1\")\n";
+	print CSF "Requirements = (OpSys =?= \"LINUX\") && (SlotID == 1)\n";
 	print CSF "Executable = $ENV{'HOME'}/opt/GATK-Lilly/public/shell/process_one_paired_end_lane.sh\n";
 	print CSF "Arguments = " . join(" ", @args) . "\n";
-	print CSF "input   = /dev/null\n";
+	print CSF "input = /dev/null\n";
 	print CSF "output = $jobdir/log.out\n";
 	print CSF "error = $jobdir/log.err\n";
 	print CSF "notification = Never\n";
+	print CSF "should_transfer_files = YES\n";
+	print CSF "when_to_transfer_output = ON_EXIT\n";
 	print CSF "Queue\n";
 
 	close(CSF);
@@ -168,10 +170,12 @@ foreach my $entry (@entries) {
 		#print "$cmd\n";
 
 		my $submission_file = &create_condor_submission_file("$rgsm.$rgid", @cmdargs);
-		print "Dispatching lane-level pipeline for $entry{'sample'} $rgid ($submission_file)\n";
 
 		if ($args{'run'} == 1) {
+			print "Dispatching lane-level pipeline for $entry{'sample'} $rgid ($submission_file)\n";
 			system("condor_submit $submission_file");
+		} else {
+			print "Simulating dispatch of lane-level pipeline for $entry{'sample'} $rgid ($submission_file)\n";
 		}
 	}
 }

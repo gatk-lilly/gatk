@@ -170,12 +170,14 @@ foreach my $entry (@entries) {
 		#print "$cmd\n";
 
 		my $submission_file = &create_condor_submission_file("$rgsm.$rgid", @cmdargs);
+		my $submission_cmd = "condor_submit $submission_file";
 
 		if ($args{'run'} == 1) {
 			print "Dispatching lane-level pipeline for $entry{'sample'} $rgid ($submission_file)\n";
-			system("condor_submit $submission_file");
+			system($submission_cmd);
 		} else {
 			print "Simulating dispatch of lane-level pipeline for $entry{'sample'} $rgid ($submission_file)\n";
+			print "$submission_cmd\n";
 		}
 	}
 }

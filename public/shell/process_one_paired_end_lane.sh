@@ -6,7 +6,7 @@
 #$ -j y
 #$ -m be
 
-#set -x
+set -x
 
 export ID=$1
 export SM=$2
@@ -19,6 +19,8 @@ export FLOWCELL=$8
 export LANE=$9
 export FQ1=${10}
 export FQ2=${11}
+export S3_BUCKET=`echo ${12} | sed 's/s3:\/\///'`
+export S3_UPLOAD_PATH=`echo ${13}/$SM/$FLOWCELL.$LANE | sed 's/s3:\/\///'`
 
 export JAVA_HOME=$HOME/opt/jdk1.6.0_27/
 export PATH=$HOME/opt/apache-ant-1.8.2/bootstrap/bin:$HOME/opt/apache-ant-1.8.2/dist/bin:$HOME/opt/jdk1.6.0_27/bin:$HOME/opt/jdk1.6.0_27/db/bin:$HOME/opt/jdk1.6.0_27/jre/bin:$HOME/opt/git-1.7.6/bin:$HOME/opt/git-1.7.6/perl/blib/bin:$HOME/opt/bwa-0.5.9:$HOME/opt/samtools-0.1.17:$HOME/opt/jets3t-0.8.1/bin:$PATH
@@ -28,7 +30,6 @@ export WORK=/mnt/scratch/$SM/$ID
 export RESOURCES=$WORK/resources
 export TMP=$WORK/tmp
 export DATA=$WORK/data
-export S3_BUCKET="ngs-kiran"
 
 export GATK="java -Djava.io.tmpdir=$TMP -jar $HOME/opt/GATK-Lilly/dist/GenomeAnalysisTK.jar";
 export QUEUE="java -Djava.io.tmpdir=$TMP -jar $HOME/opt/GATK-Lilly/dist/Queue.jar";
@@ -37,8 +38,6 @@ export CPUS=`cat /proc/cpuinfo | grep -c processor`
 export BAM_BASE="$FLOWCELL.$LANE"
 export BAM=$BAM_BASE.bam
 export BAI=$BAM_BASE.bai
-
-export S3_UPLOAD_PATH="s3://$S3_BUCKET/lanes/ACRG/$SM/$ID/"
 
 echo "Creating $WORK directory..."
 rm -rf $WORK

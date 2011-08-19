@@ -80,6 +80,7 @@ chomp(my $header = <MANIFEST>);
 my @header = split(/\s+/, $header);
 
 while (my $line = <MANIFEST>) {
+	next if $line =~ /#/;
 	chomp($line);
 
 	my @entry = split(/\s+/, $line);

@@ -2,6 +2,7 @@
 
 use strict;
 use Data::Dumper;
+use File::Path;
 
 sub usage {
 	my %args = @_;
@@ -74,17 +75,22 @@ sub getArgs {
 sub create_condor_submission_file {
 	my ($id, @args) = @_;
 
-	my $submission_file = ".$id.submit";
+	my $jobdir = ".condor_submit/$id";
+
+	my $submission_file = "$jobdir/submit";
+	if (! -e $jobdir) {
+		mkpath($jobdir);
+	}
 
 	open(CSF, ">$submission_file");
 
 	print CSF "Universe = vanilla\n";
-	print CSF "Requirements = (OpSys =?= \"LINUX\") && (SlotID =?= "1")\n";
-	print CSF "Executable = /opt/GATK-Lilly/public/shell/process_one_paired_end_lane.sh\n";
+	print CSF "Requirements = (OpSys =?= \"LINUX\") && (SlotID =?= \"1\")\n";
+	print CSF "Executable = $ENV{'HOME'}/opt/GATK-Lilly/public/shell/process_one_paired_end_lane.sh\n";
 	print CSF "Arguments = " . join(" ", @args) . "\n";
 	print CSF "input   = /dev/null\n";
-	print CSF "output = .$id-$(Cluster).$(Process).out\n";
-	print CSF "error = .$id-$(Cluster).$(Process).err\n";
+	print CSF "output = $jobdir/log.out\n";
+	print CSF "error = $jobdir/log.err\n";
 	print CSF "notification = Never\n";
 	print CSF "Queue\n";
 
@@ -93,7 +99,25 @@ sub create_condor_submission_file {
 	return $submission_file;
 }
 
-my %args = &getArgs("s3_manifest" => undef, "s3_upload_bucket" => undef, "run" => 0);
+sub get_s3_contents {
+	my ($s3_path) = @_;
+	my %s3;
+
+	chomp(my @files = qx(s3cmd ls -r $s3_path));
+
+	foreach my $line (@files) {
+		my ($date, $time, $size, $file) = split(/\s+/, $line);
+
+		$s3{$file} = $size;
+	}
+
+	return %s3;
+}
+
+my %args = &getArgs("s3_manifest" => undef, "s3_upload_path" => undef, "run" => 0);
+
+my ($s3_root) = $args{'s3_upload_path'} =~ /(s3:\/\/.+?\/)/;
+my %s3 = &get_s3_contents($s3_root);
 
 my @entries;
 
@@ -134,12 +158,20 @@ foreach my $entry (@entries) {
 	my $rgcn = "BGI";
 	my $rgdt = $entry{'date'};
 
-	#my $cmd = "qsub -l hostname=ip-10-91-2-91.ec2.internal ~/opt/GATK-Lilly/public/shell/process_one_paired_end_lane.sh $rgid $rgsm $rglb $rgpu $rgpl $rgcn $rgdt $entry{'flowcell'} $entry{'lane'} $entry{'f1'} $entry{'f2'}";
-	my @cmdargs = ($rgid, $rgsm, $rglb, $rgpu, $rgpl, $rgcn, $rgdt, $entry{'flowcell'}, $entry{'lane'}, $entry{'f1'}, $entry{'f2'});
+	my $s3file = "$args{'s3_upload_path'}/$entry{'sample'}/$entry{'flowcell'}.$entry{'lane'}/$entry{'flowcell'}.$entry{'lane'}.bam";
+	if (exists($s3{$s3file})) {
+		print "Skipping lane-level pipeline for $entry{'sample'} $rgid because the result is already present in S3.\n";
+	} else {
+		my @cmdargs = ($rgid, $rgsm, $rglb, $rgpu, $rgpl, $rgcn, $rgdt, $entry{'flowcell'}, $entry{'lane'}, $entry{'f1'}, $entry{'f2'}, $s3_root, $args{'s3_upload_path'});
 
-	print "Dispatching lane-level pipeline for $entry{'sample'} $rgid\n";
-	if ($args{'run'} == 1) {
-		my $submission_file = &create_condor_submission_file($rgid, @cmdargs);
-		system("condor_submit $submission_file");
+		#my $cmd = "$ENV{'HOME'}/opt/GATK-Lilly/public/shell/process_one_paired_end_lane.sh " . join(" ", @cmdargs);
+		#print "$cmd\n";
+
+		my $submission_file = &create_condor_submission_file("$rgsm.$rgid", @cmdargs);
+		print "Dispatching lane-level pipeline for $entry{'sample'} $rgid ($submission_file)\n";
+
+		if ($args{'run'} == 1) {
+			system("condor_submit $submission_file");
+		}
 	}
 }

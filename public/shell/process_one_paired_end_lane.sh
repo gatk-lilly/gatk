@@ -19,11 +19,12 @@ export FLOWCELL=$8
 export LANE=$9
 export FQ1=${10}
 export FQ2=${11}
-export S3_BUCKET=`echo ${12} | sed 's/s3:\/\///'`
+export S3_BUCKET=`echo ${12} | sed 's/s3:\/\///' | sed 's/\/$//'`
 export S3_UPLOAD_PATH=`echo ${13}/$SM/$FLOWCELL.$LANE | sed 's/s3:\/\///'`
 
+export HOME=/shared/home/lilly-collab
 export JAVA_HOME=$HOME/opt/jdk1.6.0_27/
-export PATH=$HOME/opt/apache-ant-1.8.2/bootstrap/bin:$HOME/opt/apache-ant-1.8.2/dist/bin:$HOME/opt/jdk1.6.0_27/bin:$HOME/opt/jdk1.6.0_27/db/bin:$HOME/opt/jdk1.6.0_27/jre/bin:$HOME/opt/git-1.7.6/bin:$HOME/opt/git-1.7.6/perl/blib/bin:$HOME/opt/bwa-0.5.9:$HOME/opt/samtools-0.1.17:$HOME/opt/jets3t-0.8.1/bin:$PATH
+export PATH=$HOME/opt/apache-ant-1.8.2/bootstrap/bin:$HOME/opt/apache-ant-1.8.2/dist/bin:$HOME/opt/jdk1.6.0_27/bin:$HOME/opt/jdk1.6.0_27/db/bin:$HOME/opt/jdk1.6.0_27/jre/bin:$HOME/opt/git-1.7.6/bin:$HOME/opt/git-1.7.6/perl/blib/bin:$HOME/opt/bwa-0.5.9:$HOME/opt/samtools-0.1.17:$HOME/opt/jets3t-0.8.1/bin:/usr/kerberos/bin:/usr/local/bin:/bin:/usr/bin:/opt/condor/current/bin:/usr/java/default/bin:/shared/home/lilly-collab/bin:$PATH
 export JETS3T_HOME=$HOME/opt/jets3t-0.8.1
 
 export WORK=/mnt/scratch/$SM/$ID

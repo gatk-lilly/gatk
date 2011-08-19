@@ -5,7 +5,8 @@
 #$ -cwd
 #$ -j y
 #$ -m be
-#$ -l cores=4
+
+#set -x
 
 export ID=$1
 export SM=$2
@@ -37,30 +38,30 @@ export BAM_BASE="$FLOWCELL.$LANE"
 export BAM=$BAM_BASE.bam
 export BAI=$BAM_BASE.bai
 
-echo "Creating $WORK directory"
+export S3_UPLOAD_PATH="s3://$S3_BUCKET/lanes/ACRG/$SM/$ID/"
+
+echo "Creating $WORK directory..."
 rm -rf $WORK
 mkdir -p $WORK
 mkdir $DATA
 mkdir $TMP
 
-echo "Changing to $WORK directory"
+echo "Changing to $WORK directory..."
 cd $WORK
 
 echo "Extracting NGS resources"
 s3cmd sync s3://$S3_BUCKET/resources $WORK/
 gunzip -c $RESOURCES/resources.tar.gz | tar -C $RESOURCES -xf -
 
-echo "Downloading fastqs"
+echo "Downloading fastqs..."
 s3cmd sync $FQ1 $DATA/end1.fq.gz
 s3cmd sync $FQ2 $DATA/end2.fq.gz
 
-echo "Running lane-level pipeline"
-$QUEUE -S $HOME/opt/GATK-Lilly/public/scala/qscript/org/broadinstitute/sting/queue/qscripts/LaneProcessingPipeline.scala -bwa $HOME/opt/bwa-0.5.9/bwa -R $RESOURCES/ucsc.hg19.fasta -f1 $DATA/end1.fq.gz -f2 $DATA/end2.fq.gz -name $BAM -rg '@RG\tID:$ID\tSM:$SM\tLB:$LB\tPU:$PU\tPL:$PL\tCN:$CN\tDT:$DT' -threads $CPUS
+echo "Running lane-level pipeline..."
+$QUEUE -S $HOME/opt/GATK-Lilly/public/scala/qscript/org/broadinstitute/sting/queue/qscripts/LaneProcessingPipeline.scala -bwa $HOME/opt/bwa-0.5.9/bwa -R $RESOURCES/ucsc.hg19.fasta -f1 $DATA/end1.fq.gz -f2 $DATA/end2.fq.gz -name $BAM -rg "@RG\tID:$ID\tSM:$SM\tLB:$LB\tPU:$PU\tPL:$PL\tCN:$CN\tDT:$DT" -threads $CPUS -run
 
-echo "Uploading results"
-S3_UPLOAD_PATH="s3://$S3_BUCKET/lanes/ACRG/$SM/$ID/"
-
-$HOME/bin/synchronize.sh --nodelete UP $S3_UPLOAD_PATH $BAM
-$HOME/bin/synchronize.sh --nodelete UP $S3_UPLOAD_PATH $BAI
+echo "Uploading results..."
+$JETS3T_HOME/bin/synchronize.sh --nodelete UP $S3_UPLOAD_PATH $BAM
+$JETS3T_HOME/bin/synchronize.sh --nodelete UP $S3_UPLOAD_PATH $BAI
 
 echo "Done."

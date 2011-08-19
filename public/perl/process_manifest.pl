@@ -112,7 +112,10 @@ foreach my $entry (@entries) {
 	my $rgcn = "BGI";
 	my $rgdt = $entry{'date'};
 
-	my $cmd = "~/opt/GATK-Lilly/public/shell/process_one_paired_end_lane.sh $rgid $rgsm $rglb $rgpu $rgpl $rgcn $rgdt $entry{'flowcell'} $entry{'lane'} $entry{'f1'} $entry{'f2'}";
+	my $cmd = "qsub -l hostname=ip-10-91-2-91.ec2.internal ~/opt/GATK-Lilly/public/shell/process_one_paired_end_lane.sh $rgid $rgsm $rglb $rgpu $rgpl $rgcn $rgdt $entry{'flowcell'} $entry{'lane'} $entry{'f1'} $entry{'f2'}";
 
-	print "$cmd\n";
+	print "Dispatching lane-level pipeline for $entry{'sample'} $rgid: $cmd\n";
+	if ($args{'run'} == 1) {
+		system($cmd);
+	}
 }

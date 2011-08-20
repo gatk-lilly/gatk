@@ -30,37 +30,37 @@ export CPUS=`cat /proc/cpuinfo | grep -c processor`
 
 export BAM=$SM.bam
 export BAI=$SM.bai
+export BAM_LIST="$LISTS/$SM.bam.list"
 
-echo "Creating $WORK directory..."
-rm -rf $WORK
-mkdir -p $WORK
-mkdir $DATA
-mkdir $TMP
-mkdir $LISTS
-
-echo "Changing to $WORK directory..."
+#echo "Creating $WORK directory..."
+#rm -rf $WORK
+#mkdir -p $WORK
+#mkdir $DATA
+#mkdir $TMP
+#mkdir $LISTS
+#
+#echo "Changing to $WORK directory..."
 cd $WORK
-
-echo "Extracting NGS resources..."
-s3cmd sync s3://$S3_BUCKET/resources $WORK/
-gunzip -c $RESOURCES/resources.tar.gz | tar -C $RESOURCES -xf -
-
-echo "Downloading lane BAMs..."
-for LANE_BAM in $LANES
-do
-	LANE_BAI=`echo $LANE_BAM | sed 's/.bam/.bai/'`
-
-	BAM_BASENAME=`basename $LANE_BAM`
-	BAI_BASENAME=`basename $LANE_BAI`
-
-	s3cmd sync $LANE_BAM $DATA/$BAM_BASENAME
-	s3cmd sync $LANE_BAI $DATA/$BAI_BASENAME
-done
-BAM_LIST="$LISTS/$SM.bam.list"
-find $DATA -name \*.bam > $BAM_LIST
+#
+#echo "Extracting NGS resources..."
+#s3cmd sync s3://$S3_BUCKET/resources $WORK/
+#gunzip -c $RESOURCES/resources.tar.gz | tar -C $RESOURCES -xf -
+#
+#echo "Downloading lane BAMs..."
+#for LANE_BAM in $LANES
+#do
+#	LANE_BAI=`echo $LANE_BAM | sed 's/.bam/.bai/'`
+#
+#	BAM_BASENAME=`basename $LANE_BAM`
+#	BAI_BASENAME=`basename $LANE_BAI`
+#
+#	s3cmd sync $LANE_BAM $DATA/$BAM_BASENAME
+#	s3cmd sync $LANE_BAI $DATA/$BAI_BASENAME
+#done
+#find $DATA -name \*.bam > $BAM_LIST
 
 echo "Running sample-level pipeline..."
-$QUEUE -S $HOME/opt/GATK-Lilly/public/scala/qscript/org/broadinstitute/sting/queue/qscripts/DataProcessingPipeline.scala -i $BAM_LIST -r $HOME/opt/GATK-Lilly/public/R/ -R $RESOURCES/ucsc.hg19.fasta -D $RESOURCES/dbsnp_132.hg19.vcf -indels $RESOURCES/1000G_indels_for_realignment.hg19.vcf -project aggregated 
+$QUEUE -S $HOME/opt/GATK-Lilly/public/scala/qscript/org/broadinstitute/sting/queue/qscripts/DataProcessingPipeline.scala -i $BAM_LIST -r $HOME/opt/GATK-Lilly/public/R/ -R $RESOURCES/ucsc.hg19.fasta -D $RESOURCES/dbsnp_132.hg19.vcf -indels $RESOURCES/1000G_indels_for_realignment.hg19.vcf -p aggregated -run
 mv aggregated.$SM.bam $BAM
 mv aggregated.$SM.bai $BAI
 

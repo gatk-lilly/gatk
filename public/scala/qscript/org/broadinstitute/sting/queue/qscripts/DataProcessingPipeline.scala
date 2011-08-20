@@ -144,7 +144,7 @@ class DataProcessingPipeline extends QScript {
     for ((sample, flist) <- sampleTable) {
 
       println(sample + ":")
-      for (f <- flist)
+     for (f <- flist)
         println (f)
       println()
 
@@ -307,7 +307,7 @@ class DataProcessingPipeline extends QScript {
     this.rodBind :+= RodBind("dbsnp", "VCF", dbSNP)
     if (indels != null)
       this.rodBind :+= RodBind("indels", "VCF", indels)
-    this.scatterCount = nContigs
+    //this.scatterCount = nContigs
     this.analysisName = queueLogDir + outIntervals + ".target"
     this.jobName = queueLogDir + outIntervals + ".target"
   }
@@ -322,7 +322,7 @@ class DataProcessingPipeline extends QScript {
       this.rodBind :+= RodBind("indels", "VCF", qscript.indels)
     this.consensusDeterminationModel =  consensusDeterminationModel
     this.compress = 0
-    this.scatterCount = nContigs
+    //this.scatterCount = nContigs
     this.analysisName = queueLogDir + outBam + ".clean"
     this.jobName = queueLogDir + outBam + ".clean"
   }
@@ -334,7 +334,7 @@ class DataProcessingPipeline extends QScript {
     this.recal_file = outRecalFile
     if (!qscript.intervalString.isEmpty()) this.intervalsString ++= List(qscript.intervalString)
     else if (qscript.intervals != null) this.intervals :+= qscript.intervals
-    this.scatterCount = nContigs
+    //this.scatterCount = nContigs
     this.analysisName = queueLogDir + outRecalFile + ".covariates"
     this.jobName = queueLogDir + outRecalFile + ".covariates"
   }
@@ -346,7 +346,7 @@ class DataProcessingPipeline extends QScript {
     this.out = outBam
     if (!qscript.intervalString.isEmpty()) this.intervalsString ++= List(qscript.intervalString)
     else if (qscript.intervals != null) this.intervals :+= qscript.intervals
-    this.scatterCount = nContigs
+    //this.scatterCount = nContigs
     this.isIntermediate = false
     this.analysisName = queueLogDir + outBam + ".recalibration"
     this.jobName = queueLogDir + outBam + ".recalibration"

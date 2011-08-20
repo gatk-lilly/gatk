@@ -40,6 +40,9 @@ export BAM_BASE="$FLOWCELL.$LANE"
 export BAM=$BAM_BASE.bam
 export BAI=$BAM_BASE.bai
 
+export HOST=`hostname`
+echo "Running on $HOST"
+
 echo "Creating $WORK directory..."
 rm -rf $WORK
 mkdir -p $WORK

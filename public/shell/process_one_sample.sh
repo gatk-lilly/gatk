@@ -71,8 +71,8 @@ echo "Running sample-level pipeline..."
 $QUEUE -S $HOME/opt/GATK-Lilly/public/scala/qscript/org/broadinstitute/sting/queue/qscripts/DataProcessingPipeline.scala -i $MERGED_BAM -r $HOME/opt/GATK-Lilly/public/R -R $RESOURCES/ucsc.hg19.fasta -D $RESOURCES/dbsnp_132.hg19.vcf -indels $RESOURCES/1000G_indels_for_realignment.hg19.vcf -L $CHR -nv -p processed -run
 ln -s processed.101N.clean.dedup.recal.bam $BAM
 ln -s processed.101N.clean.dedup.recal.bai $BAI
-tar -cf processed.$ID.pre.tar processed.$ID.pre/ && gzip processed.$ID.pre.tar
-tar -cf processed.$ID.post.tar processed.$ID.post/ && gzip processed.$ID.post.tar
+tar -cf processed.$ID.pre.tar processed.$SM.pre/ && gzip processed.$ID.pre.tar
+tar -cf processed.$ID.post.tar processed.$SM.post/ && gzip processed.$ID.post.tar
 
 echo "Uploading results..."
 $JETS3T_HOME/bin/synchronize.sh --nodelete UP $S3_UPLOAD_PATH $BAM

@@ -150,21 +150,20 @@ foreach my $entry (@entries) {
 	push(@{$samples{$entry{'sample'}}}, $lanebam);
 }
 
-foreach my $sample (keys(%samples)) {
-	my @s3lanebams = @{$samples{$sample}};
+#foreach my $chr ("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY") {
+foreach my $chr ("chr22", "chr21", "chr20", "chr19", "chr18", "chr17", "chr16", "chr15", "chr14", "chr13", "chr12", "chr11", "chr10", "chr9", "chr8", "chr7", "chr6", "chr5", "chr4", "chr3", "chr2", "chr1", "chrX", "chrY") {
+	foreach my $sample (keys(%samples)) {
+		my @s3lanebams = @{$samples{$sample}};
 
-	my $allLanesPresent = 1;
-	foreach my $s3lanebam (@s3lanebams) {
-		if (!exists($s3{$s3lanebam})) {
-			$allLanesPresent = 0;
+		my $allLanesPresent = 1;
+		foreach my $s3lanebam (@s3lanebams) {
+			if (!exists($s3{$s3lanebam})) {
+				$allLanesPresent = 0;
+			}
 		}
-	}
 
-	if ($allLanesPresent) {
-		foreach my $chr ("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY") {
+		if ($allLanesPresent) {
 			my $s3samplebam = "$args{'s3_upload_path'}/$sample/$sample.$chr.analysis_ready.bam";
-
-			print "$s3samplebam\n";
 
 			if ($s3{$s3samplebam}) {
 				print "Skipping sample-level pipeline for $sample $chr because the result is already present in S3.\n";
@@ -178,15 +177,15 @@ foreach my $sample (keys(%samples)) {
 				my $submission_cmd = "condor_submit $submission_file";
 
 				if ($args{'run'} == 1) {
-					print "Dispatching sample-level pipeline for $sample ($submission_file)\n";
+					print "Dispatching sample-level pipeline for $sample $chr ($submission_file)\n";
 					system($submission_cmd);
 				} else {
-					print "Simulating dispatch of sample-level pipeline for $sample ($submission_file)\n";
+					print "Simulating dispatch of sample-level pipeline for $sample $chr ($submission_file)\n";
 					print "$submission_cmd\n";
 				}
 			}
+		} else {
+			print "Skipping sample-level pipeline for $sample because some expected lane BAMs are not present in S3.\n";
 		}
-	} else {
-		print "Skipping sample-level pipeline for $sample because some expected lane BAMs are not present in S3.\n";
 	}
 }

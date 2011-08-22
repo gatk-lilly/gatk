@@ -62,6 +62,8 @@ public class PrintReadsWalker extends ReadWalker<SAMRecord, SAMFileWriter> {
     public Set<File> sampleFile = new TreeSet<File>();
     @Argument(fullName="sample_name", shortName="sn", doc="Sample name to be included in the analysis. Can be specified multiple times.", required=false)
     public Set<String> sampleNames = new TreeSet<String>();
+    @Argument(fullName="add_readgroup_to_readname", shortName="addrg", doc="Prefix each read name with the read group name.", required=false)
+    public Boolean addReadGroupToReadName = false;
 
     private TreeSet<String> samplesToChoose = new TreeSet<String>();
     private boolean SAMPLES_SPECIFIED = false;
@@ -139,6 +141,10 @@ public class PrintReadsWalker extends ReadWalker<SAMRecord, SAMFileWriter> {
      * @return the read itself
      */
     public SAMRecord map( ReferenceContext ref, SAMRecord read, ReadMetaDataTracker metaDataTracker ) {
+        if (addReadGroupToReadName) {
+            read.setReadName(read.getReadGroup().getId() + "." + read.getReadName());
+        }
+
         return read;
     }
 

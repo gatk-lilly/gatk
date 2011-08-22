@@ -85,7 +85,8 @@ sub create_condor_submission_file {
 	open(CSF, ">$submission_file");
 
 	print CSF "Universe = vanilla\n";
-	print CSF "Requirements = (OpSys =?= \"LINUX\") && (SlotID == 1)\n";
+	#print CSF "Requirements = (OpSys =?= \"LINUX\") && (SlotID == 1)\n";
+	print CSF "Requirements = (OpSys =?= \"LINUX\")\n";
 	print CSF "Executable = $ENV{'HOME'}/opt/GATK-Lilly/public/shell/process_one_sample.sh\n";
 	print CSF "Arguments = " . join(" ", @args) . "\n";
 	print CSF "input = /dev/null\n";
@@ -164,20 +165,22 @@ foreach my $sample (keys(%samples)) {
 		}
 
 		if ($allLanesPresent) {
-			my @cmdargs = ($sample, $s3_root, $args{'s3_upload_path'}, @s3lanebams);
+			foreach my $chr ("chrM", "chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY") {
+				my @cmdargs = ($sample, $chr, $s3_root, $args{'s3_upload_path'}, @s3lanebams);
 
-			my $cmd = "$ENV{'HOME'}/opt/GATK-Lilly/public/shell/process_one_sample.sh " . join(" ", @cmdargs);
-			print "$cmd\n";
+				#my $cmd = "$ENV{'HOME'}/opt/GATK-Lilly/public/shell/process_one_sample.sh " . join(" ", @cmdargs);
+				#print "$cmd\n";
 
-			my $submission_file = &create_condor_submission_file($sample, @cmdargs);
-			my $submission_cmd = "condor_submit $submission_file";
+				my $submission_file = &create_condor_submission_file($sample, @cmdargs);
+				my $submission_cmd = "condor_submit $submission_file";
 
-			if ($args{'run'} == 1) {
-				print "Dispatching sample-level pipeline for $sample ($submission_file)\n";
-				system($submission_cmd);
-			} else {
-				#print "Simulating dispatch of sample-level pipeline for $sample ($submission_file)\n";
-				#print "$submission_cmd\n";
+				if ($args{'run'} == 1) {
+					print "Dispatching sample-level pipeline for $sample ($submission_file)\n";
+					system($submission_cmd);
+				} else {
+					print "Simulating dispatch of sample-level pipeline for $sample ($submission_file)\n";
+					print "$submission_cmd\n";
+				}
 			}
 		} else {
 			print "Skipping sample-level pipeline for $sample because some expected lane BAMs are not present in S3.\n";

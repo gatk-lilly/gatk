@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export JAVA_HOME=$HOME/opt/jdk1.6.0_27/
-export PATH=$HOME/opt/apache-ant-1.8.2/bootstrap/bin:$HOME/opt/apache-ant-1.8.2/dist/bin:$HOME/opt/jdk1.6.0_27/bin:$HOME/opt/jdk1.6.0_27/db/bin:$HOME/opt/jdk1.6.0_27/jre/bin:$HOME/opt/git-1.7.6/bin:$HOME/opt/git-1.7.6/perl/blib/bin:$HOME/opt/bwa-0.5.9:$HOME/opt/samtools-0.1.17:$HOME/opt/jets3t-0.8.1/bin:$PATH
+export PATH=$HOME/opt/apache-ant-1.8.2/bootstrap/bin:$HOME/opt/apache-ant-1.8.2/dist/bin:$HOME/opt/jdk1.6.0_27/bin:$HOME/opt/jdk1.6.0_27/db/bin:$HOME/opt/jdk1.6.0_27/jre/bin:$HOME/opt/git-1.7.6/bin:$HOME/opt/git-1.7.6/perl/blib/bin:$HOME/opt/bwa-0.5.9:$HOME/opt/samtools-0.1.17:$HOME/opt/jets3t-0.8.1/bin:$HOME/opt/R-2.13.1/bin/:$PATH
 export JETS3T_HOME=$HOME/opt/jets3t-0.8.1
 alias ls='ls --color'
 
@@ -36,7 +36,7 @@ if [ ! -e opt/git-1.7.6.tar.bz2 ]; then
 	bunzip2 -c opt/git-1.7.6.tar.bz2 | tar -C opt/ -xf -
 
 	cd opt/git-1.7.6
-	./configure --prefix=$HOME/ --without-curl
+	./configure --prefix=$HOME/opt/git-1.7.6/ --without-curl
 	make
 	make install
 	cd $HOME
@@ -48,6 +48,9 @@ if [ ! -e opt/GATK-Lilly ]; then
 	cd opt/GATK-Lilly
 	ant dist queue
 	cd $HOME
+
+	git config --global user.email "ngslilly@yahoo.com"
+	git config --global user.name "gatk-lilly"
 fi
 
 if [ ! -e opt/samtools-0.1.17.tar.bz2 ]; then
@@ -79,6 +82,17 @@ if [ ! -e opt/jets3t-0.8.1.zip ]; then
 
 	cd opt/jets3t-0.8.1
 	chmod 777 bin/*.sh
+	cd $HOME
+fi
+
+if [ ! -e opt/R-2.13.1.tar.gz ]; then
+	wget http://cran.case.edu/src/base/R-2/R-2.13.1.tar.gz -O opt/R-2.13.1.tar.gz
+	gunzip -c opt/R-2.13.1.tar.gz | tar -C opt/ -xf -
+
+	cd opt/R-2.13.1
+	./configure --prefix=$HOME/opt/R-2.13.1 --with-readline=no --with-x=no
+	make
+	make install
 	cd $HOME
 fi
 

@@ -73,9 +73,9 @@ sub getArgs {
 }
 
 sub create_condor_submission_file {
-	my ($id, @args) = @_;
+	my ($id, $chr, @args) = @_;
 
-	my $jobdir = ".condor_submit/$id";
+	my $jobdir = ".condor_submit/$id/$chr";
 
 	my $submission_file = "$jobdir/submit";
 	if (! -e $jobdir) {
@@ -152,26 +152,29 @@ foreach my $entry (@entries) {
 
 foreach my $sample (keys(%samples)) {
 	my @s3lanebams = @{$samples{$sample}};
-	my $s3samplebam = "$args{'s3_upload_path'}/$sample/$sample.bam";
 
-	if (exists($s3{$s3samplebam})) {
-		print "Skipping sample-level pipeline for $sample because the result is already present in S3.\n";
-	} else {
-		my $allLanesPresent = 1;
-		foreach my $s3lanebam (@s3lanebams) {
-			if (!exists($s3{$s3lanebam})) {
-				$allLanesPresent = 0;
-			}
+	my $allLanesPresent = 1;
+	foreach my $s3lanebam (@s3lanebams) {
+		if (!exists($s3{$s3lanebam})) {
+			$allLanesPresent = 0;
 		}
+	}
 
-		if ($allLanesPresent) {
-			foreach my $chr ("chrM", "chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY") {
+	if ($allLanesPresent) {
+		foreach my $chr ("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY") {
+			my $s3samplebam = "$args{'s3_upload_path'}/$sample/$sample.$chr.analysis_ready.bam";
+
+			print "$s3samplebam\n";
+
+			if ($s3{$s3samplebam}) {
+				print "Skipping sample-level pipeline for $sample $chr because the result is already present in S3.\n";
+			} else {
 				my @cmdargs = ($sample, $chr, $s3_root, $args{'s3_upload_path'}, @s3lanebams);
 
 				#my $cmd = "$ENV{'HOME'}/opt/GATK-Lilly/public/shell/process_one_sample.sh " . join(" ", @cmdargs);
 				#print "$cmd\n";
 
-				my $submission_file = &create_condor_submission_file($sample, @cmdargs);
+				my $submission_file = &create_condor_submission_file($sample, $chr, @cmdargs);
 				my $submission_cmd = "condor_submit $submission_file";
 
 				if ($args{'run'} == 1) {
@@ -182,8 +185,8 @@ foreach my $sample (keys(%samples)) {
 					print "$submission_cmd\n";
 				}
 			}
-		} else {
-			print "Skipping sample-level pipeline for $sample because some expected lane BAMs are not present in S3.\n";
 		}
+	} else {
+		print "Skipping sample-level pipeline for $sample because some expected lane BAMs are not present in S3.\n";
 	}
 }

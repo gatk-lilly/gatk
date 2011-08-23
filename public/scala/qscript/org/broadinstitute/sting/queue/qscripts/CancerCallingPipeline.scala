@@ -54,7 +54,7 @@ class CancerCallingPipeline extends QScript {
     this.out = outVCF
     this.glm = org.broadinstitute.sting.gatk.walkers.genotyper.GenotypeLikelihoodsCalculationModel.Model.SNP
     this.baq = org.broadinstitute.sting.utils.baq.BAQ.CalculationMode.CALCULATE_AS_NECESSARY
-    this.A ++= List("FisherStrand", "FS", "InbreedingCoeff")
+    this.A ++= List("FisherStrand")
 
     this.scatterCount = numJobs
     this.analysisName = queueLogDir + outVCF + ".callSNPs"
@@ -77,6 +77,9 @@ class CancerCallingPipeline extends QScript {
     this.variantVCF = inVCF
     this.sample_file ++= List(inSamples)
     this.out = outVCF
+
+    this.analysisName = queueLogDir + outVCF + ".selectVariants"
+    this.jobName = queueLogDir + outVCF + ".selectVariants"
   }
 
   case class filterIndels(inVCF: File, outVCF: File) extends VariantFiltration with CommandLineGATKArgs {
@@ -86,7 +89,7 @@ class CancerCallingPipeline extends QScript {
     this.filterExpression ++= List("\"MQ0 >= 4 && (MQ0 / (1.0 * DP)) > 0.1\"", "\"QUAL<50.0\"", "\"SB>=-1.0\"", "\"QD<5.0\"", "\"HRun>=15\"")
     this.out = outVCF
 
-    this.scatterCount = 10
+    //this.scatterCount = 10
     this.analysisName = queueLogDir + outVCF + ".filterIndels"
     this.jobName = queueLogDir + outVCF + ".filterIndels"
   }
@@ -100,8 +103,8 @@ class CancerCallingPipeline extends QScript {
     this.allPoly = true
     this.tranche ++= List("100.0", "99.9", "99.5", "99.3", "99.0", "98.9", "98.8", "98.5", "98.4", "98.3", "98.2", "98.1", "98.0", "97.9", "97.8", "97.5", "97.0", "95.0", "90.0")
     this.rscript_file = outRscript
-    this.tranches_file = tranchesFile
-    this.recal_file = recalFile
+    this.tranches_file = outTranches
+    this.recal_file = outRecal
 
     this.analysisName = queueLogDir + outRecal + ".VQSR"
     this.jobName =  queueLogDir + outRecal + ".VQSR"

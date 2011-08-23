@@ -40,12 +40,21 @@ class CancerCallingPipeline extends QScript {
   @Input(doc="The number of scatter-gather jobs to use", fullName="numJobs", shortName="j", required=false)
   var numJobs: Int = 1
 
+  @Input(doc="the -L interval string to be used by GATK - output bams at interval only", fullName="gatk_interval_string", shortName="L", required=false)
+  var intervalString: String = ""
+
+  @Input(doc="an intervals file to be used by GATK - output bams at intervals only", fullName="gatk_interval_file", shortName="intervals", required=false)
+  var intervals: File = _
+
   val queueLogDir: String = ".qlog/"  // Gracefully hide Queue's output
 
   trait CommandLineGATKArgs extends CommandLineGATK {
     this.memoryLimit = 4;
     this.reference_sequence = qscript.reference
     this.isIntermediate = false
+
+    if (!qscript.intervalString.isEmpty()) this.intervalsString ++= List(qscript.intervalString)
+    else if (qscript.intervals != null) this.intervals :+= qscript.intervals
   }
 
   case class callSNPs(inBam: List[java.io.File], outVCF: File) extends UnifiedGenotyper with CommandLineGATKArgs {

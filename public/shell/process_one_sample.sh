@@ -69,8 +69,8 @@ $HOME/opt/samtools-0.1.17/samtools index $MERGED_BAM
 
 echo "Running sample-level pipeline..."
 $QUEUE -S $HOME/opt/GATK-Lilly/public/scala/qscript/org/broadinstitute/sting/queue/qscripts/DataProcessingPipeline.scala -i $MERGED_BAM -r $HOME/opt/GATK-Lilly/public/R -R $RESOURCES/ucsc.hg19.fasta -D $RESOURCES/dbsnp_132.hg19.vcf -indels $RESOURCES/1000G_indels_for_realignment.hg19.vcf -L $CHR -nv -p processed -run
-ln -s processed.101N.clean.dedup.recal.bam $BAM
-ln -s processed.101N.clean.dedup.recal.bai $BAI
+ln -s processed.$SM.clean.dedup.recal.bam $BAM
+ln -s processed.$SM.clean.dedup.recal.bai $BAI
 tar -cf processed.$ID.pre.tar processed.$SM.pre/ && gzip processed.$ID.pre.tar
 tar -cf processed.$ID.post.tar processed.$SM.post/ && gzip processed.$ID.post.tar
 

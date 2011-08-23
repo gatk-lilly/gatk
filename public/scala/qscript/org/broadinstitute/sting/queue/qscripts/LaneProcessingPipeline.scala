@@ -49,7 +49,7 @@ class DataProcessingPipeline extends QScript {
     @Input(doc="fastq file to be aligned") var fastq = inFastq
     @Output(doc="output sai file for pair end") var sai = outSai
 
-    def commandLine = bwaPath + " aln -t " + threads + " -q 5 " + reference + " " + fastq + " > " + sai
+    def commandLine = bwaPath + " aln -I -t " + threads + " -q 5 " + reference + " " + fastq + " > " + sai
 
     this.analysisName = queueLogDir + outSai + ".bwa_aln_fastq"
     this.jobName = queueLogDir + outSai + ".bwa_aln_fastq"

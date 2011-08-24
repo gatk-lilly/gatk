@@ -13,6 +13,7 @@ import net.sf.samtools.SAMFileHeader.SortOrder
 import org.broadinstitute.sting.queue.util.QScriptUtils
 import org.broadinstitute.sting.queue.function.{CommandLineFunction, ListWriterFunction}
 import org.broadinstitute.sting.gatk.walkers.variantrecalibration.VariantRecalibratorArgumentCollection
+import org.broadinstitute.sting.utils.variantcontext.VariantContext
 
 class CancerCallingPipeline extends QScript {
   qscript =>
@@ -154,6 +155,20 @@ class CancerCallingPipeline extends QScript {
     this.jobName =  queueLogDir + outVCF + ".applyRecalibrationToIndels"
   }
 
+  case class evaluateSNPs(inVCF: File, outEval: File) extends VariantEval with CommandLineGATKArgs {
+    this.rodBind :+= RodBind("eval", "VCF", inVCF)
+    this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp)
+    this.VT = List(VariantContext.Type.SNP)
+    this.out = outEval
+  }
+
+  case class evaluateIndels(inVCF: File, outEval: File) extends VariantEval with CommandLineGATKArgs {
+    this.rodBind :+= RodBind("eval", "VCF", inVCF)
+    this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp)
+    this.VT = List(VariantContext.Type.INDEL)
+    this.out = outEval
+  }
+
   /****************************************************************************
   * Main script
   ****************************************************************************/
@@ -177,7 +192,10 @@ class CancerCallingPipeline extends QScript {
     val tumorRecalIndels           = "intermediate/variants/tumor/indels.recal"
 
     val tumorRecalibratedSNPs      = "intermediate/variants/tumor/partially_recalibrated.vcf"
+
     val tumorRecalibratedVariants  = "tumor.analysis_ready.vcf"
+    val tumorEvalSNPs              = "tumor.analysis_ready.snps.eval"
+    val tumorEvalIndels            = "tumor.analysis_ready.indels.eval"
 
     // Normal-specific files
     val normalRawVariants          = "intermediate/variants/normal/raw.vcf"
@@ -192,7 +210,10 @@ class CancerCallingPipeline extends QScript {
     val normalRecalIndels          = "intermediate/variants/normal/indels.recal"
 
     val normalRecalibratedSNPs     = "intermediate/variants/normal/partially_recalibrated.vcf"
+
     val normalRecalibratedVariants = "normal.analysis_ready.vcf"
+    val normalEvalSNPs             = "normal.analysis_ready.snps.eval"
+    val normalEvalIndels           = "normal.analysis_ready.indels.eval"
 
     add(
       callVariants(bams, rawVariants),
@@ -203,13 +224,17 @@ class CancerCallingPipeline extends QScript {
       recalibrateIndels(tumorRawAnnotatedVariants, tumorRscriptIndels, tumorTranchesIndels, tumorRecalIndels),
       applyRecalibrationToSNPs(tumorRawAnnotatedVariants, tumorTranchesSNPs, tumorRecalSNPs, tumorRecalibratedSNPs),
       applyRecalibrationToIndels(tumorRecalibratedSNPs, tumorTranchesIndels, tumorRecalIndels, tumorRecalibratedVariants),
+      evaluateSNPs(tumorRecalibratedVariants, tumorEvalSNPs),
+      evaluateIndels(tumorRecalibratedVariants, tumorEvalIndels),
 
       selectSamples(rawVariants, normalSamples, normalRawVariants),
       annotateVariants(bams, normalRawVariants, normalRawAnnotatedVariants),
       recalibrateSNPs(normalRawAnnotatedVariants, normalRscriptSNPs, normalTranchesSNPs, normalRecalSNPs),
       recalibrateIndels(normalRawAnnotatedVariants, normalRscriptIndels, normalTranchesIndels, normalRecalIndels),
       applyRecalibrationToSNPs(normalRawAnnotatedVariants, normalTranchesSNPs, normalRecalSNPs, normalRecalibratedSNPs),
-      applyRecalibrationToIndels(normalRecalibratedSNPs, normalTranchesIndels, normalRecalIndels, normalRecalibratedVariants)
+      applyRecalibrationToIndels(normalRecalibratedSNPs, normalTranchesIndels, normalRecalIndels, normalRecalibratedVariants),
+      evaluateSNPs(normalRecalibratedVariants, normalEvalSNPs),
+      evaluateIndels(normalRecalibratedVariants, normalEvalIndels)
     )
   }
 }

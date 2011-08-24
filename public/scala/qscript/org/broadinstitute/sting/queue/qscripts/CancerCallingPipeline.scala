@@ -101,7 +101,7 @@ class CancerCallingPipeline extends QScript {
     this.rodBind :+= RodBind("omni", "VCF", omni, "known=false,training=true,truth=true,prior=12.0")
     this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp, "known=true,training=false,truth=false,prior=10.0")
 
-    this.use_annotation ++= List("QD", "HaplotypeScore", "MQRankSum", "ReadPosRankSum", "FS", "MQ", "DP")
+    this.use_annotation ++= List("QD", "HaplotypeScore", "MQRankSum", "ReadPosRankSum", "FS", "MQ", "DP", "InbreedingCoeff")
     this.allPoly = true
     this.mode = VariantRecalibratorArgumentCollection.Mode.SNP
 
@@ -118,7 +118,7 @@ class CancerCallingPipeline extends QScript {
     this.rodBind :+= RodBind("input", "VCF", inVCF)
     this.rodBind :+= RodBind("training", "VCF", mdindels, "known=true,training=true,truth=true,prior=12.0")
 
-    this.use_annotation ++= List("QD", "FS", "HaplotypeScore", "ReadPosRankSum")
+    this.use_annotation ++= List("QD", "FS", "HaplotypeScore", "ReadPosRankSum", "InbreedingCoeff")
     this.allPoly = true
     this.mode = VariantRecalibratorArgumentCollection.Mode.INDEL
 
@@ -160,6 +160,9 @@ class CancerCallingPipeline extends QScript {
     this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp)
     this.VT = List(VariantContext.Type.SNP)
     this.out = outEval
+
+    this.analysisName = queueLogDir + outEval + ".variantEvalSNPs"
+    this.jobName =  queueLogDir + outEval + ".variantEvalSNPs"
   }
 
   case class evaluateIndels(inVCF: File, outEval: File) extends VariantEval with CommandLineGATKArgs {
@@ -167,6 +170,9 @@ class CancerCallingPipeline extends QScript {
     this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp)
     this.VT = List(VariantContext.Type.INDEL)
     this.out = outEval
+
+    this.analysisName = queueLogDir + outEval + ".variantEvalIndels"
+    this.jobName =  queueLogDir + outEval + ".variantEvalIndels"
   }
 
   /****************************************************************************

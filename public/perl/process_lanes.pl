@@ -161,7 +161,10 @@ foreach my $entry (@entries) {
 	my $rgdt = $entry{'date'};
 
 	my $s3file = "$args{'s3_upload_path'}/$entry{'sample'}/$entry{'flowcell'}.$entry{'lane'}/$entry{'flowcell'}.$entry{'lane'}.bam";
-	if (exists($s3{$s3file})) {
+
+	if ($entry{'f1'} eq 'none' || $entry{'f2'} eq 'none') {
+		print "Skipping lane-level pipeline for $entry{'sample'} $rgid because fastqs for one or both ends of the lane are missing.\n";
+	} elsif (exists($s3{$s3file})) {
 		print "Skipping lane-level pipeline for $entry{'sample'} $rgid because the result is already present in S3.\n";
 	} else {
 		my @cmdargs = ($rgid, $rgsm, $rglb, $rgpu, $rgpl, $rgcn, $rgdt, $entry{'flowcell'}, $entry{'lane'}, $entry{'f1'}, $entry{'f2'}, $s3_root, $args{'s3_upload_path'});

@@ -12,6 +12,7 @@ import net.sf.samtools.SAMFileHeader.SortOrder
 
 import org.broadinstitute.sting.queue.util.QScriptUtils
 import org.broadinstitute.sting.queue.function.{CommandLineFunction, ListWriterFunction}
+import org.broadinstitute.sting.gatk.walkers.variantrecalibration.VariantRecalibratorArgumentCollection
 
 class CancerCallingPipeline extends QScript {
   qscript =>
@@ -37,6 +38,9 @@ class CancerCallingPipeline extends QScript {
   @Input(doc="DbSNP file", fullName="dbsnp", shortName="D", required=true)
   var dbsnp: File = _
 
+  @Input(doc="Mills-Devine indels file", fullName="mdindels", shortName="MD", required=true)
+  var mdindels: File = _
+
   @Input(doc="The number of scatter-gather jobs to use", fullName="numJobs", shortName="j", required=false)
   var numJobs: Int = 1
 
@@ -57,29 +61,17 @@ class CancerCallingPipeline extends QScript {
     else if (qscript.intervals != null) this.intervals :+= qscript.intervals
   }
 
-  case class callSNPs(inBam: List[java.io.File], outVCF: File) extends UnifiedGenotyper with CommandLineGATKArgs {
+  case class callVariants(inBam: List[java.io.File], outVCF: File) extends UnifiedGenotyper with CommandLineGATKArgs {
     this.input_file = inBam
     this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp)
     this.out = outVCF
-    this.glm = org.broadinstitute.sting.gatk.walkers.genotyper.GenotypeLikelihoodsCalculationModel.Model.SNP
-    this.baq = org.broadinstitute.sting.utils.baq.BAQ.CalculationMode.CALCULATE_AS_NECESSARY
-    this.A ++= List("FisherStrand")
-
-    this.scatterCount = numJobs
-    this.analysisName = queueLogDir + outVCF + ".callSNPs"
-    this.jobName = queueLogDir + outVCF + ".callSNPs"
-  }
-
-  case class callIndels(inBam: List[java.io.File], outVCF: File) extends UnifiedGenotyper with CommandLineGATKArgs {
-    this.input_file = inBam
-    this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp)
-    this.out = outVCF
-    this.glm = org.broadinstitute.sting.gatk.walkers.genotyper.GenotypeLikelihoodsCalculationModel.Model.INDEL
+    this.glm = org.broadinstitute.sting.gatk.walkers.genotyper.GenotypeLikelihoodsCalculationModel.Model.BOTH
     this.baq = org.broadinstitute.sting.utils.baq.BAQ.CalculationMode.OFF
+    this.stand_call_conf = 20
 
     this.scatterCount = numJobs
-    this.analysisName = queueLogDir + outVCF + ".callIndels"
-    this.jobName = queueLogDir + outVCF + ".callIndels"
+    this.analysisName = queueLogDir + outVCF + ".callVariants"
+    this.jobName = queueLogDir + outVCF + ".callVariants"
   }
 
   case class selectSamples(inVCF: File, inSamples: File, outVCF: File) extends SelectVariants with CommandLineGATKArgs {
@@ -87,57 +79,79 @@ class CancerCallingPipeline extends QScript {
     this.sample_file ++= List(inSamples)
     this.out = outVCF
 
+    this.scatterCount = numJobs
     this.analysisName = queueLogDir + outVCF + ".selectVariants"
     this.jobName = queueLogDir + outVCF + ".selectVariants"
   }
 
-  case class filterIndels(inVCF: File, outVCF: File) extends VariantFiltration with CommandLineGATKArgs {
+  case class annotateVariants(inBam: List[java.io.File], inVCF: File, outVCF: File) extends VariantAnnotator with CommandLineGATKArgs {
+    this.input_file = inBam
     this.variantVCF = inVCF
-    this.memoryLimit = 2
-    this.filterName ++= List("HardToValidate", "LowQual", "StrandBias", "QualByDepth", "HomopolymerRun")
-    this.filterExpression ++= List("\"MQ0 >= 4 && (MQ0 / (1.0 * DP)) > 0.1\"", "\"QUAL<50.0\"", "\"SB>=-1.0\"", "\"QD<5.0\"", "\"HRun>=15\"")
     this.out = outVCF
+    this.A ++= List("FisherStrand")
 
-    //this.scatterCount = 10
-    this.analysisName = queueLogDir + outVCF + ".filterIndels"
-    this.jobName = queueLogDir + outVCF + ".filterIndels"
+    this.analysisName = queueLogDir + outVCF + ".annotateVariants"
+    this.jobName = queueLogDir + outVCF + ".annotateVariants"
   }
 
-  case class VQSR(inVCF: File, outRscript: File, outTranches: File, outRecal: File) extends VariantRecalibrator with CommandLineGATKArgs {
+  case class recalibrateSNPs(inVCF: File, outRscript: File, outTranches: File, outRecal: File) extends VariantRecalibrator with CommandLineGATKArgs {
     this.rodBind :+= RodBind("input", "VCF", inVCF)
     this.rodBind :+= RodBind("hapmap", "VCF", hapmap, "known=false,training=true,truth=true,prior=15.0")
     this.rodBind :+= RodBind("omni", "VCF", omni, "known=false,training=true,truth=true,prior=12.0")
     this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp, "known=true,training=false,truth=false,prior=10.0")
-    this.use_annotation ++= List("QD", "HaplotypeScore", "MQRankSum", "ReadPosRankSum", "HRun", "FS")
+
+    this.use_annotation ++= List("QD", "HaplotypeScore", "MQRankSum", "ReadPosRankSum", "FS", "MQ", "DP")
     this.allPoly = true
+    this.mode = VariantRecalibratorArgumentCollection.Mode.SNP
+
     this.tranche ++= List("100.0", "99.9", "99.5", "99.3", "99.0", "98.9", "98.8", "98.5", "98.4", "98.3", "98.2", "98.1", "98.0", "97.9", "97.8", "97.5", "97.0", "95.0", "90.0")
     this.rscript_file = outRscript
     this.tranches_file = outTranches
     this.recal_file = outRecal
 
-    this.analysisName = queueLogDir + outRecal + ".VQSR"
-    this.jobName =  queueLogDir + outRecal + ".VQSR"
+    this.analysisName = queueLogDir + outRecal + ".recalibrateSNPs"
+    this.jobName =  queueLogDir + outRecal + ".recalibrateSNPs"
   }
 
-  case class applyVQSR(inVCF: File, inTranches: File, inRecal: File, outVCF: File) extends ApplyRecalibration with CommandLineGATKArgs {
+  case class recalibrateIndels(inVCF: File, outRscript: File, outTranches: File, outRecal: File) extends VariantRecalibrator with CommandLineGATKArgs {
+    this.rodBind :+= RodBind("input", "VCF", inVCF)
+    this.rodBind :+= RodBind("training", "VCF", mdindels, "known=true,training=true,truth=true,prior=12.0")
+
+    this.use_annotation ++= List("QD", "FS", "HaplotypeScore", "ReadPosRankSum")
+    this.allPoly = true
+    this.mode = VariantRecalibratorArgumentCollection.Mode.INDEL
+
+    this.tranche ++= List("100.0", "99.9", "99.5", "99.3", "99.0", "98.9", "98.8", "98.5", "98.4", "98.3", "98.2", "98.1", "98.0", "97.9", "97.8", "97.5", "97.0", "95.0", "90.0")
+    this.rscript_file = outRscript
+    this.tranches_file = outTranches
+    this.recal_file = outRecal
+
+    this.analysisName = queueLogDir + outRecal + ".recalibrateIndels"
+    this.jobName =  queueLogDir + outRecal + ".recalibrateIndels"
+  }
+
+  case class applyRecalibrationToSNPs(inVCF: File, inTranches: File, inRecal: File, outVCF: File) extends ApplyRecalibration with CommandLineGATKArgs {
     this.rodBind :+= RodBind("input", "VCF", inVCF)
     this.tranches_file = inTranches
     this.recal_file = inRecal
     this.ts_filter_level = 99.0
+    this.mode = VariantRecalibratorArgumentCollection.Mode.SNP
     this.out = outVCF
 
-    this.analysisName = queueLogDir + outVCF + ".applyVQSR"
-    this.jobName =  queueLogDir + outVCF + ".applyVQSR"
+    this.analysisName = queueLogDir + outVCF + ".applyRecalibrationToSNPs"
+    this.jobName =  queueLogDir + outVCF + ".applyRecalibrationToSNPs"
   }
 
-  case class combineTumorNormalCalls(inTumorVCF: File, inNormalVCF: File, outVCF: File) extends CombineVariants with CommandLineGATKArgs {
-    this.rodBind :+= RodBind("tumor", "VCF", inTumorVCF)
-    this.rodBind :+= RodBind("normal", "VCF", inNormalVCF)
-    //this.priority = "tumor,normal"
+  case class applyRecalibrationToIndels(inVCF: File, inTranches: File, inRecal: File, outVCF: File) extends ApplyRecalibration with CommandLineGATKArgs {
+    this.rodBind :+= RodBind("input", "VCF", inVCF)
+    this.tranches_file = inTranches
+    this.recal_file = inRecal
+    this.ts_filter_level = 99.0
+    this.mode = VariantRecalibratorArgumentCollection.Mode.INDEL
     this.out = outVCF
 
-    this.analysisName = queueLogDir + outVCF + ".combineVariants"
-    this.jobName =  queueLogDir + outVCF + ".combineVariants"
+    this.analysisName = queueLogDir + outVCF + ".applyRecalibrationToIndels"
+    this.jobName =  queueLogDir + outVCF + ".applyRecalibrationToIndels"
   }
 
   /****************************************************************************
@@ -148,58 +162,54 @@ class CancerCallingPipeline extends QScript {
     val bams = QScriptUtils.createListFromFile(input)
 
     // SNPs
-    val rawSNPs =                "intermediate/snps/snps.raw.vcf"
+    val rawVariants                = "intermediate/variants/raw.vcf"
 
-    val tumorRawSNPs =           "intermediate/snps/tumor/snps.raw.vcf"
-    val tumorRscript =           "intermediate/snps/tumor/snps.vqsr.R"
-    val tumorTranches =          "intermediate/snps/tumor/snps.tranches"
-    val tumorRecal =             "intermediate/snps/tumor/snps.recal"
-    val tumorRecalibratedSNPs =  "intermediate/snps/tumor/snps.analysis_ready.vcf"
-    
-    val normalRawSNPs =          "intermediate/snps/normal/snps.raw.vcf"
-    val normalRscript =          "intermediate/snps/normal/snps.vqsr.R"
-    val normalTranches =         "intermediate/snps/normal/snps.tranches"
-    val normalRecal =            "intermediate/snps/normal/snps.recal"
-    val normalRecalibratedSNPs = "intermediate/snps/normal/snps.analysis_ready.vcf"
+    // Tumor-specific files
+    val tumorRawVariants           = "intermediate/variants/tumor/raw.vcf"
+    val tumorRawAnnotatedVariants  = "intermediate/variants/tumor/raw.annotated.vcf"
 
-    val analysisReadySNPs =      "tumornormal.snps.analysis_ready.vcf"
+    val tumorRscriptSNPs           = "intermediate/variants/tumor/snps.vqsr.R"
+    val tumorTranchesSNPs          = "intermediate/variants/tumor/snps.tranches"
+    val tumorRecalSNPs             = "intermediate/variants/tumor/snps.recal"
 
-    // Indels
-    val rawIndels =              "intermediate/indels/indels.raw.vcf"
+    val tumorRscriptIndels         = "intermediate/variants/tumor/indels.vqsr.R"
+    val tumorTranchesIndels        = "intermediate/variants/tumor/indels.tranches"
+    val tumorRecalIndels           = "intermediate/variants/tumor/indels.recal"
 
-    val tumorRawIndels =         "intermediate/indels/tumor/indels.raw.vcf"
-    val tumorFilteredIndels =    "intermediate/indels/tumor/indels.analysis_ready.vcf"
+    val tumorRecalibratedSNPs      = "intermediate/variants/tumor/partially_recalibrated.vcf"
+    val tumorRecalibratedVariants  = "tumor.analysis_ready.vcf"
 
-    val normalRawIndels =        "intermediate/indels/normal/indels.raw.vcf"
-    val normalFilteredIndels =   "intermediate/indels/normal/indels.analysis_ready.vcf"
+    // Normal-specific files
+    val normalRawVariants          = "intermediate/variants/normal/raw.vcf"
+    val normalRawAnnotatedVariants = "intermediate/variants/normal/raw.annotated.vcf"
 
-    val analysisReadyIndels =    "tumornormal.indels.analysis_ready.vcf"
+    val normalRscriptSNPs          = "intermediate/variants/normal/snps.vqsr.R"
+    val normalTranchesSNPs         = "intermediate/variants/normal/snps.tranches"
+    val normalRecalSNPs            = "intermediate/variants/normal/snps.recal"
 
-    // Add the rules
+    val normalRscriptIndels        = "intermediate/variants/normal/indels.vqsr.R"
+    val normalTranchesIndels       = "intermediate/variants/normal/indels.tranches"
+    val normalRecalIndels          = "intermediate/variants/normal/indels.recal"
+
+    val normalRecalibratedSNPs     = "intermediate/variants/normal/partially_recalibrated.vcf"
+    val normalRecalibratedVariants = "normal.analysis_ready.vcf"
+
     add(
-        // SNP rules
-        callSNPs(bams, rawSNPs),
+      callVariants(bams, rawVariants),
 
-        selectSamples(rawSNPs, tumorSamples, tumorRawSNPs),
-        VQSR(tumorRawSNPs, tumorRscript, tumorTranches, tumorRecal),
-        applyVQSR(tumorRawSNPs, tumorTranches, tumorRecal, tumorRecalibratedSNPs),
-    
-        selectSamples(rawSNPs, normalSamples, normalRawSNPs),
-        VQSR(normalRawSNPs, normalRscript, normalTranches, normalRecal),
-        applyVQSR(normalRawSNPs, normalTranches, normalRecal, normalRecalibratedSNPs),
+      selectSamples(rawVariants, tumorSamples, tumorRawVariants),
+      annotateVariants(bams, tumorRawVariants, tumorRawAnnotatedVariants),
+      recalibrateSNPs(tumorRawAnnotatedVariants, tumorRscriptSNPs, tumorTranchesSNPs, tumorRecalSNPs),
+      recalibrateIndels(tumorRawAnnotatedVariants, tumorRscriptIndels, tumorTranchesIndels, tumorRecalIndels),
+      applyRecalibrationToSNPs(tumorRawAnnotatedVariants, tumorTranchesSNPs, tumorRecalSNPs, tumorRecalibratedSNPs),
+      applyRecalibrationToIndels(tumorRecalibratedSNPs, tumorTranchesIndels, tumorRecalIndels, tumorRecalibratedVariants),
 
-        combineTumorNormalCalls(tumorRecalibratedSNPs, normalRecalibratedSNPs, analysisReadySNPs),
-
-        // Indel rules
-        callIndels(bams, rawIndels),
-
-        selectSamples(rawIndels, tumorSamples, tumorRawIndels),
-        filterIndels(tumorRawIndels, tumorFilteredIndels),
-
-        selectSamples(rawIndels, normalSamples, normalRawIndels),
-        filterIndels(normalRawIndels, normalFilteredIndels),
-
-        combineTumorNormalCalls(tumorFilteredIndels, normalFilteredIndels, analysisReadyIndels)
+      selectSamples(rawVariants, normalSamples, normalRawVariants),
+      annotateVariants(bams, normalRawVariants, normalRawAnnotatedVariants),
+      recalibrateSNPs(normalRawAnnotatedVariants, normalRscriptSNPs, normalTranchesSNPs, normalRecalSNPs),
+      recalibrateIndels(normalRawAnnotatedVariants, normalRscriptIndels, normalTranchesIndels, normalRecalIndels),
+      applyRecalibrationToSNPs(normalRawAnnotatedVariants, normalTranchesSNPs, normalRecalSNPs, normalRecalibratedSNPs),
+      applyRecalibrationToIndels(normalRecalibratedSNPs, normalTranchesIndels, normalRecalIndels, normalRecalibratedVariants)
     )
   }
 }

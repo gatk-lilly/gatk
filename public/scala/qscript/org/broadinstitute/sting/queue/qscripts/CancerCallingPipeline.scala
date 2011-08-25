@@ -80,7 +80,6 @@ class CancerCallingPipeline extends QScript {
     this.sample_file ++= List(inSamples)
     this.out = outVCF
 
-    this.scatterCount = numJobs
     this.analysisName = queueLogDir + outVCF + ".selectVariants"
     this.jobName = queueLogDir + outVCF + ".selectVariants"
   }
@@ -91,6 +90,7 @@ class CancerCallingPipeline extends QScript {
     this.out = outVCF
     this.A ++= List("FisherStrand")
 
+    this.scatterCount = numJobs
     this.analysisName = queueLogDir + outVCF + ".annotateVariants"
     this.jobName = queueLogDir + outVCF + ".annotateVariants"
   }

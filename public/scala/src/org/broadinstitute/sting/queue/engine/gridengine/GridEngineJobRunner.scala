@@ -95,6 +95,7 @@ class GridEngineJobRunner(val function: CommandLineFunction) extends CommandLine
       // modified by kiran
       nativeSpecString += " -l cluster=chemgroup2"
       nativeSpecString += " -l lilly_queue_priority=low"
+      //nativeSpecString += " -l cluster=ngs"
 
       gridEngineJob.setNativeSpecification(nativeSpecString)
 

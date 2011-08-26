@@ -80,9 +80,48 @@ class CancerCallingPipeline extends QScript {
     this.sample_file ++= List(inSamples)
     this.out = outVCF
 
-    this.scatterCount = numJobs
     this.analysisName = queueLogDir + outVCF + ".selectVariants"
     this.jobName = queueLogDir + outVCF + ".selectVariants"
+  }
+
+  case class selectSNPs(inVCF: File, outVCF: File) extends SelectVariants with CommandLineGATKArgs {
+    this.variantVCF = inVCF
+    this.out = outVCF
+    this.snps = true
+
+    this.analysisName = queueLogDir + outVCF + ".selectSNPs"
+    this.jobName = queueLogDir + outVCF + ".selectSNPs"
+  }
+
+  case class selectIndels(inVCF: File, outVCF: File) extends SelectVariants with CommandLineGATKArgs {
+    this.variantVCF = inVCF
+    this.out = outVCF
+    this.indels = true
+
+    this.analysisName = queueLogDir + outVCF + ".selectIndels"
+    this.jobName = queueLogDir + outVCF + ".selectIndels"
+  }
+
+  case class filterSNPs(inVCF: File, outVCF: File) extends VariantFiltration with CommandLineGATKArgs {
+    this.variantVCF = inVCF
+    this.out = outVCF
+    this.filterName ++= List("QDFilter", "HRunFilter", "FSFilter")
+    this.filterExpression ++= List("\"QD<5.0\"", "\"HRun>5\"", "\"FS>200.0\"")
+
+    this.scatterCount = 10
+    this.analysisName = queueLogDir + outVCF + ".filterSNPs"
+    this.jobName =  queueLogDir + outVCF + ".filterSNPs"
+  }
+
+  case class filterIndels(inVCF: File, outVCF: File) extends VariantFiltration with CommandLineGATKArgs {
+    this.variantVCF = inVCF
+    this.out = outVCF
+    this.filterName ++= List("QDFilter", "ReadPosRankSumFilter", "FSFilter")
+    this.filterExpression ++= List("\"QD<2.0\"", "\"ReadPosRankSum<-20.0\"", "\"FS>200.0\"")
+
+    this.scatterCount = 10
+    this.analysisName = queueLogDir + outVCF + ".filterIndels"
+    this.jobName =  queueLogDir + outVCF + ".filterIndels"
   }
 
   case class annotateVariants(inBam: List[java.io.File], inVCF: File, outVCF: File) extends VariantAnnotator with CommandLineGATKArgs {
@@ -91,6 +130,7 @@ class CancerCallingPipeline extends QScript {
     this.out = outVCF
     this.A ++= List("FisherStrand")
 
+    this.scatterCount = numJobs
     this.analysisName = queueLogDir + outVCF + ".annotateVariants"
     this.jobName = queueLogDir + outVCF + ".annotateVariants"
   }
@@ -182,8 +222,14 @@ class CancerCallingPipeline extends QScript {
   def script = {
     val bams = QScriptUtils.createListFromFile(input)
 
-    // SNPs
     val rawVariants                = "intermediate/variants/raw.vcf"
+    val rawSNPs                    = "intermediate/snps/raw.vcf"
+    val filteredSNPs               = "snps.hard_filtered.vcf"
+    val snpEval                    = "snps.hard_filtered.eval"
+
+    val rawIndels                  = "intermediate/indels/raw.vcf"
+    val filteredIndels             = "indels.hard_filtered.vcf"
+    val indelEval                  = "indels.hard_filtered.eval"
 
     // Tumor-specific files
     val tumorRawVariants           = "intermediate/variants/tumor/raw.vcf"
@@ -223,6 +269,14 @@ class CancerCallingPipeline extends QScript {
 
     add(
       callVariants(bams, rawVariants),
+
+      selectSNPs(rawVariants, rawSNPs),
+      filterSNPs(rawSNPs, filteredSNPs),
+      evaluateSNPs(filteredSNPs, snpEval),
+
+      selectIndels(rawVariants, rawIndels),
+      filterIndels(rawIndels, filteredIndels),
+      evaluateIndels(filteredIndels, indelEval),
 
       selectSamples(rawVariants, tumorSamples, tumorRawVariants),
       annotateVariants(bams, tumorRawVariants, tumorRawAnnotatedVariants),

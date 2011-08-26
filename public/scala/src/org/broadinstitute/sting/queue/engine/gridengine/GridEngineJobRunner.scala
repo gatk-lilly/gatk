@@ -69,7 +69,7 @@ class GridEngineJobRunner(val function: CommandLineFunction) extends CommandLine
 
       // If a project name is set specify the project name
       if (Option(function.jobProject) != None) {
-        nativeSpecString += " -P " + function.jobProject
+        //nativeSpecString += " -P " + function.jobProject
       }
 
       // If the job queue is set specify the job queue
@@ -79,24 +79,31 @@ class GridEngineJobRunner(val function: CommandLineFunction) extends CommandLine
 
       // If the resident set size is requested pass on the memory request
       if (residentRequestMB.isDefined) {
-        nativeSpecString += " -l mem_free=%dM".format(residentRequestMB.get.ceil.toInt)
+        //nativeSpecString += " -l mem_free=%dM".format(residentRequestMB.get.ceil.toInt)
       }
 
       // If the resident set size limit is defined specify the memory limit
       if (residentLimitMB.isDefined) {
-        nativeSpecString += " -l h_rss=%dM".format(residentLimitMB.get.ceil.toInt)
+        //nativeSpecString += " -l h_rss=%dM".format(residentLimitMB.get.ceil.toInt)
       }
 
       // If the priority is set (user specified Int) specify the priority
       if (function.jobPriority.isDefined) {
-        nativeSpecString += " -p " + function.jobPriority.get
+        //nativeSpecString += " -p " + function.jobPriority.get
       }
+
+      // modified by kiran
+      nativeSpecString += " -l cluster=chemgroup2"
+      nativeSpecString += " -l lilly_queue_priority=low"
 
       gridEngineJob.setNativeSpecification(nativeSpecString)
 
       // Instead of running the function.commandLine, run "sh <jobScript>"
       gridEngineJob.setRemoteCommand("sh")
       gridEngineJob.setArgs(Collections.singletonList(jobScript.toString))
+
+      println(nativeSpecString)
+      println(jobScript.toString)
 
       // Allow advanced users to update the request via QFunction.updateJobRun()
       updateJobRun(gridEngineJob)

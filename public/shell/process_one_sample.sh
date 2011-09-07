@@ -80,4 +80,31 @@ $JETS3T_HOME/bin/synchronize.sh --nodelete UP $S3_UPLOAD_PATH $BAI
 $JETS3T_HOME/bin/synchronize.sh --nodelete UP $S3_UPLOAD_PATH processed.$ID.pre.tar.gz
 $JETS3T_HOME/bin/synchronize.sh --nodelete UP $S3_UPLOAD_PATH processed.$ID.post.tar.gz
 
+
+bamSrcSize=$(stat -c %s $BAM)
+bamDestSize=$(s3cmd ls $S3_UPLOAD_PATH$BAM|awk '{print $3}')
+echo " $S3_UPLOAD_PATH$BAM"
+
+bamSrcSize=$(stat -L -c %s $BAM)
+bamDestSize=$(s3cmd ls 's3://'$S3_UPLOAD_PATH'/'$BAM|awk '{print $3}')
+
+baiSrcSize=$(stat -L -c %s $BAI)
+baiDestSize=$(s3cmd ls 's3://'$S3_UPLOAD_PATH'/'$BAI|awk '{print $3}')
+
+echo $BAM"="$bamSrcSize
+echo "Dest"$BAM"="$bamDestSize
+
+echo $BAI"="$baiSrcSize
+echo "Dest " $BAI"="$baiDestSize
+
+if [ "$bamSrcSize" == "$bamDestSize" -a "$baiSrcSize" == "$baiDestSize" ]; then
+        rm -rf $WORK
+        echo "Removed "$WORK
+else
+    echo "Uploading to S3 does not result in matching bam and bai file sizes"
+fi
+
+
+
+
 echo "Done."

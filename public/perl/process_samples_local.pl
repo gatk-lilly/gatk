@@ -4,7 +4,7 @@ use strict;
 use Data::Dumper;
 use File::Path;
 
-my $app_path = "/lrlhps/users/u9x8503/GATK"; # Change according to your application path which starts with \opt\
+my $app_path = "/lrlhps/users/c085541/GATK"; # Change according to your application path which starts with \opt\
 
 if ($app_path =~ /\/$/){
 	$app_path =~ s/\/$//;
@@ -81,9 +81,11 @@ sub getArgs {
 
 sub create_condor_submission_file {
 	my ($id, $chr, @args) = @_;
-	my $jobdir = ".condor_submit/$id/$chr";
-	my $submission_file = "$jobdir/submit";
-	my $log_file = "$jobdir/log.out";
+	my $jobdir = ".condor_submit";
+	my $logprefix = $id."_".$chr."_";
+	my $submission_file = "$jobdir/$logprefix"."submit";
+
+	my $log_file = "$jobdir/$logprefix"."log.out";
 	my $has_run_before = 0;
 
 	if (-e $submission_file) {
@@ -98,19 +100,20 @@ sub create_condor_submission_file {
 
 	print CSF "Universe = vanilla\n";
 	#print CSF "Requirements = (OpSys =?= \"LINUX\") && (SlotID == 1)\n";
-	print CSF "Requirements = (OpSys =?= \"LINUX\")\n";	
-	#print CSF "Requirements = (OpSys =?= \"LINUX\") && (environmentName == \"toolbox\")\n"; #To make it run on any toolbox servers
+	#print CSF "Requirements = (OpSys =?= \"LINUX\")\n";	
+	print CSF "Requirements = (OpSys =?= \"LINUX\") && (SlotID ==1) && (environmentName == \"toolbox\")\n"; #To make it run on any toolbox servers
 #	print CSF "Executable = $ENV{'HOME'}/opt/GATK-Lilly/public/shell/process_one_sample_local.sh\n";
 	print CSF "Executable = $app_path/opt/GATK-Lilly/public/shell/process_one_sample_local.sh\n";
 	print CSF "Arguments = " . join(" ", @args) . "\n";
 	print CSF "input = /dev/null\n";
-	print CSF "output = $jobdir/log.out\n";
-	print CSF "error = $jobdir/log.err\n";
+	print CSF "output = $jobdir/$logprefix"."log.out\n";
+	print CSF "error = $jobdir/$logprefix"."log.err\n";
 	print CSF "StreamOut = True\n";
 	print CSF "StreamErr = True\n";
-	print CSF "notification = Never\n";
+	print CSF "notification = Error\n";
+	print CSF "notify_user = jian.wang\@lilly.com\n";
 	print CSF "should_transfer_files = YES\n";
-	print CSF "when_to_transfer_output = ON_EXIT\n";
+	print CSF "when_to_transfer_output = ON_EXIT_OR_EVICT\n";
 	print CSF "Queue\n";
 
 	close(CSF);

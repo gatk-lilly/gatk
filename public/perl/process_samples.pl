@@ -75,9 +75,12 @@ sub getArgs {
 sub create_condor_submission_file {
 	my ($id, $chr, @args) = @_;
 
-	my $jobdir = ".condor_submit/$id/$chr";
-	my $submission_file = "$jobdir/submit";
-	my $log_file = "$jobdir/log.out";
+	#my $jobdir = ".condor_submit/$id/$chr";
+	my $jobdir = ".condor_submit";
+	my $logprefix = $id."_".$chr."_";
+	my $submission_file = "$jobdir/$logprefix"."submit";
+	#my $log_file = "$jobdir/log.out";
+	my $log_file = "$jobdir/$logprefix"."log.out";
 	my $has_run_before = 0;
 
 	if (-e $submission_file) {
@@ -96,11 +99,15 @@ sub create_condor_submission_file {
 	print CSF "Executable = $ENV{'HOME'}/opt/GATK-Lilly/public/shell/process_one_sample.sh\n";
 	print CSF "Arguments = " . join(" ", @args) . "\n";
 	print CSF "input = /dev/null\n";
-	print CSF "output = $jobdir/log.out\n";
-	print CSF "error = $jobdir/log.err\n";
-	print CSF "notification = Never\n";
+	print CSF "output = $jobdir/$logprefix"."log.out\n";
+	#print CSF "output = $jobdir/$logprefix"."\$(Cluster).\$(Process)"."log.out\n";
+	print CSF "error = $jobdir/$logprefix"."log.err\n";
+	print CSF "StreamOut = True\n";
+	print CSF "StreamErr = True\n";
+	print CSF "notification = Error\n";
+	print CSF "notify_user = jian.wang\@lilly.com\n";
 	print CSF "should_transfer_files = YES\n";
-	print CSF "when_to_transfer_output = ON_EXIT\n";
+	print CSF "when_to_transfer_output = ON_EXIT_OR_EVICT\n";
 	print CSF "Queue\n";
 
 	close(CSF);

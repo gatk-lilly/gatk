@@ -183,6 +183,7 @@ class CancerCallingPipeline extends QScript {
     this.mode = VariantRecalibratorArgumentCollection.Mode.SNP
     this.out = outVCF
 
+    this.memoryLimit = 32;
     this.analysisName = queueLogDir + outVCF + ".applyRecalibrationToSNPs"
     this.jobName =  queueLogDir + outVCF + ".applyRecalibrationToSNPs"
   }
@@ -195,6 +196,7 @@ class CancerCallingPipeline extends QScript {
     this.mode = VariantRecalibratorArgumentCollection.Mode.INDEL
     this.out = outVCF
 
+    this.memoryLimit = 32;
     this.analysisName = queueLogDir + outVCF + ".applyRecalibrationToIndels"
     this.jobName =  queueLogDir + outVCF + ".applyRecalibrationToIndels"
   }

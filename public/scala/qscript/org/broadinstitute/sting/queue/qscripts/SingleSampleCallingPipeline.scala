@@ -232,8 +232,6 @@ class CancerCallingPipeline extends QScript {
     val filteredIndelsEval         = "single_sample/hard_filtered/indels/indels.hard_filtered.eval"
 
     // Soft-filter files
-    val rawAnnotatedVariants       = "single_sample/.intermediate/variants/raw.annotated.vcf"
-
     val rscriptSNPs                = "single_sample/.intermediate/variants/snps.vqsr.R"
     val tranchesSNPs               = "single_sample/.intermediate/variants/snps.tranches"
     val recalSNPs                  = "single_sample/.intermediate/variants/snps.recal"
@@ -261,9 +259,9 @@ class CancerCallingPipeline extends QScript {
       evaluateIndels(filteredIndels, filteredIndelsEval),
 
       // SOFT FILTERS:
-      recalibrateSNPs(rawAnnotatedVariants, rscriptSNPs, tranchesSNPs, recalSNPs),
-      recalibrateIndels(rawAnnotatedVariants, rscriptIndels, tranchesIndels, recalIndels),
-      applyRecalibrationToSNPs(rawAnnotatedVariants, tranchesSNPs, recalSNPs, recalibratedSNPs),
+      recalibrateSNPs(rawVariants, rscriptSNPs, tranchesSNPs, recalSNPs),
+      recalibrateIndels(rawVariants, rscriptIndels, tranchesIndels, recalIndels),
+      applyRecalibrationToSNPs(rawVariants, tranchesSNPs, recalSNPs, recalibratedSNPs),
       applyRecalibrationToIndels(recalibratedSNPs, tranchesIndels, recalIndels, recalibratedVariants),
       evaluateSNPs(recalibratedVariants, evalSNPs),
       evaluateIndels(recalibratedVariants, evalIndels)

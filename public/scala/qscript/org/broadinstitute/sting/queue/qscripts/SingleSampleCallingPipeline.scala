@@ -136,7 +136,7 @@ class CancerCallingPipeline extends QScript {
     this.rodBind :+= RodBind("omni", "VCF", omni, "known=false,training=true,truth=true,prior=12.0")
     this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp, "known=true,training=false,truth=false,prior=10.0")
 
-    this.use_annotation ++= List("QD", "HaplotypeScore", "MQRankSum", "ReadPosRankSum", "FS", "MQ", "DP", "InbreedingCoeff")
+    this.use_annotation ++= List("QD", "HaplotypeScore", "MQRankSum", "ReadPosRankSum", "FS", "MQ", "DP")
     this.allPoly = true
     this.mode = VariantRecalibratorArgumentCollection.Mode.SNP
 
@@ -153,7 +153,7 @@ class CancerCallingPipeline extends QScript {
     this.rodBind :+= RodBind("input", "VCF", inVCF)
     this.rodBind :+= RodBind("training", "VCF", mdindels, "known=true,training=true,truth=true,prior=12.0")
 
-    this.use_annotation ++= List("QD", "FS", "HaplotypeScore", "ReadPosRankSum", "InbreedingCoeff")
+    this.use_annotation ++= List("QD", "FS", "HaplotypeScore", "ReadPosRankSum")
     this.allPoly = true
     this.mode = VariantRecalibratorArgumentCollection.Mode.INDEL
 

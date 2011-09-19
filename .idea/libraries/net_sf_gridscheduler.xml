@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="net.sf.gridscheduler">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/settings/repository/net.sf.gridscheduler/drmaa-6.2u5p2-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/settings/repository/net.sf.gridscheduler/drmaa-6.2u5p2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/public/java/Public.iml" filepath="$PROJECT_DIR$/public/java/Public.iml" />
+      <module fileurl="file://$PROJECT_DIR$/public/scala/Scala.iml" filepath="$PROJECT_DIR$/public/scala/Scala.iml" />
+    </modules>
+  </component>
+</project>
+

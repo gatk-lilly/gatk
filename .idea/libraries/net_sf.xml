@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="net.sf">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/settings/repository/net.sf/picard-1.52.944.jar!/" />
+      <root url="jar://$PROJECT_DIR$/settings/repository/net.sf/sam-1.52.944.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

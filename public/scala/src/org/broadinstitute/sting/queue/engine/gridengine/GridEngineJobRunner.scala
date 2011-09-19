@@ -43,6 +43,19 @@ class GridEngineJobRunner(session: Session, function: CommandLineFunction) exten
     // Force the remote environment to inherit local environment settings
     var nativeSpec: String = "-V"
 
+    //run on tool box server
+    //nativeSpec += " -l cluster=chemgroup2"
+    //nativeSpec += " -l lilly_queue_priority=low"
+
+    //run on brianic server
+    //nativeSpec += " -l cluster=brainiac"
+    //nativeSpec += " -l lilly_queue_priority=low"
+    //nativeSpec += " -l per_host=1"
+
+    //run on ngs server (sent to both tool box and brainiac)
+    nativeSpec += " -l cluster=ngs"
+
+
     // If a project name is set specify the project name
     if (function.jobProject != null)
       nativeSpec += " -P " + function.jobProject

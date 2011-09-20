@@ -64,7 +64,7 @@ done
 find $DATA -name \*.bam > $BAM_LIST
 
 echo "Merging BAM files, ensuring uniquified read names..."
-$GATK -T PrintReads -R $RESOURCES/ucsc.hg19.fasta -L $CHR -I $BAM_LIST -addrg --disable_bam_indexing -o $MERGED_BAM
+$GATK -T PrintReadsFixReadName -R $RESOURCES/ucsc.hg19.fasta -L $CHR -I $BAM_LIST -addrg --disable_bam_indexing -o $MERGED_BAM
 $HOME/opt/samtools-0.1.17/samtools index $MERGED_BAM
 
 echo "Running sample-level pipeline..."

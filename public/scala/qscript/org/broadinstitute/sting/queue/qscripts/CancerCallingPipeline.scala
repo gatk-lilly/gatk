@@ -67,7 +67,8 @@ class CancerCallingPipeline extends QScript {
 
   case class callVariants(inBam: List[java.io.File], outVCF: File) extends UnifiedGenotyper with CommandLineGATKArgs {
     this.input_file = inBam
-    this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp)
+    //this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp)
+    this.D = dbsnp
     this.out = outVCF
     this.glm = org.broadinstitute.sting.gatk.walkers.genotyper.GenotypeLikelihoodsCalculationModel.Model.BOTH
     this.baq = org.broadinstitute.sting.utils.baq.BAQ.CalculationMode.OFF
@@ -79,7 +80,7 @@ class CancerCallingPipeline extends QScript {
   }
 
   case class selectSamples(inVCF: File, inSamples: File, outVCF: File) extends SelectVariants with CommandLineGATKArgs {
-    this.variantVCF = inVCF
+    this.variant = inVCF
     this.sample_file ++= List(inSamples)
     this.out = outVCF
     this.excludeNonVariants = true
@@ -89,25 +90,27 @@ class CancerCallingPipeline extends QScript {
   }
 
   case class selectSNPs(inVCF: File, outVCF: File) extends SelectVariants with CommandLineGATKArgs {
-    this.variantVCF = inVCF
+    this.variant = inVCF
     this.out = outVCF
-    this.snps = true
+    //this.snps = true
+    this.selectTypeToInclude = List(VariantContext.Type.SNP)
 
     this.analysisName = queueLogDir + outVCF + ".selectSNPs"
     this.jobName = queueLogDir + outVCF + ".selectSNPs"
   }
 
   case class selectIndels(inVCF: File, outVCF: File) extends SelectVariants with CommandLineGATKArgs {
-    this.variantVCF = inVCF
+    this.variant = inVCF
     this.out = outVCF
-    this.indels = true
+    //this.indels = true
+    this.selectTypeToInclude = List(VariantContext.Type.SNP)
 
     this.analysisName = queueLogDir + outVCF + ".selectIndels"
     this.jobName = queueLogDir + outVCF + ".selectIndels"
   }
 
   case class filterSNPs(inVCF: File, outVCF: File) extends VariantFiltration with CommandLineGATKArgs {
-    this.variantVCF = inVCF
+    this.variant = inVCF
     this.out = outVCF
     this.filterName ++= List("QDFilter", "HRunFilter", "FSFilter")
     this.filterExpression ++= List("\"QD<5.0\"", "\"HRun>5\"", "\"FS>200.0\"")
@@ -118,7 +121,7 @@ class CancerCallingPipeline extends QScript {
   }
 
   case class filterIndels(inVCF: File, outVCF: File) extends VariantFiltration with CommandLineGATKArgs {
-    this.variantVCF = inVCF
+    this.variant = inVCF
     this.out = outVCF
     this.filterName ++= List("QDFilter", "ReadPosRankSumFilter", "FSFilter")
     this.filterExpression ++= List("\"QD<2.0\"", "\"ReadPosRankSum<-20.0\"", "\"FS>200.0\"")
@@ -130,7 +133,7 @@ class CancerCallingPipeline extends QScript {
 
   case class annotateVariants(inBam: List[java.io.File], inVCF: File, outVCF: File) extends VariantAnnotator with CommandLineGATKArgs {
     this.input_file = inBam
-    this.variantVCF = inVCF
+    this.variant = inVCF
     this.out = outVCF
     this.A ++= List("FisherStrand")
 
@@ -140,10 +143,14 @@ class CancerCallingPipeline extends QScript {
   }
 
   case class recalibrateSNPs(inVCF: File, outRscript: File, outTranches: File, outRecal: File) extends VariantRecalibrator with CommandLineGATKArgs {
-    this.rodBind :+= RodBind("input", "VCF", inVCF)
-    this.rodBind :+= RodBind("hapmap", "VCF", hapmap, "known=false,training=true,truth=true,prior=15.0")
-    this.rodBind :+= RodBind("omni", "VCF", omni, "known=false,training=true,truth=true,prior=12.0")
-    this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp, "known=true,training=false,truth=false,prior=10.0")
+    //this.rodBind :+= RodBind("input", "VCF", inVCF)
+    this.input :+= inVCF
+    //this.rodBind :+= RodBind("hapmap", "VCF", hapmap, "known=false,training=true,truth=true,prior=15.0")
+    this.resource :+= TaggedFile(hapmap, "known=false,training=true,truth=true,prior=15.0")
+    //this.rodBind :+= RodBind("omni", "VCF", omni, "known=false,training=true,truth=true,prior=12.0")
+    this.resource :+= TaggedFile(omni, "known=false,training=true,truth=true,prior=12.0")
+    //this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp, "known=true,training=false,truth=false,prior=10.0")
+    this.resource :+= TaggedFile(dbsnp, "known=true,training=false,truth=false,prior=10.0")
 
     this.use_annotation ++= List("QD", "HaplotypeScore", "MQRankSum", "ReadPosRankSum", "FS", "MQ", "DP", "InbreedingCoeff")
     this.allPoly = true
@@ -159,8 +166,10 @@ class CancerCallingPipeline extends QScript {
   }
 
   case class recalibrateIndels(inVCF: File, outRscript: File, outTranches: File, outRecal: File) extends VariantRecalibrator with CommandLineGATKArgs {
-    this.rodBind :+= RodBind("input", "VCF", inVCF)
-    this.rodBind :+= RodBind("training", "VCF", mdindels, "known=true,training=true,truth=true,prior=12.0")
+    //this.rodBind :+= RodBind("input", "VCF", inVCF)
+    this.input :+= inVCF
+    //this.rodBind :+= RodBind("training", "VCF", mdindels, "known=true,training=true,truth=true,prior=12.0")
+    this.resource :+= TaggedFile(mdindels, "known=true,training=true,truth=true,prior=12.0")
 
     this.use_annotation ++= List("QD", "FS", "HaplotypeScore", "ReadPosRankSum", "InbreedingCoeff")
     this.allPoly = true
@@ -176,7 +185,8 @@ class CancerCallingPipeline extends QScript {
   }
 
   case class applyRecalibrationToSNPs(inVCF: File, inTranches: File, inRecal: File, outVCF: File) extends ApplyRecalibration with CommandLineGATKArgs {
-    this.rodBind :+= RodBind("input", "VCF", inVCF)
+    //this.rodBind :+= RodBind("input", "VCF", inVCF)
+    this.input :+= inVCF
     this.tranches_file = inTranches
     this.recal_file = inRecal
     this.ts_filter_level = 99.0
@@ -189,7 +199,8 @@ class CancerCallingPipeline extends QScript {
   }
 
   case class applyRecalibrationToIndels(inVCF: File, inTranches: File, inRecal: File, outVCF: File) extends ApplyRecalibration with CommandLineGATKArgs {
-    this.rodBind :+= RodBind("input", "VCF", inVCF)
+    //this.rodBind :+= RodBind("input", "VCF", inVCF)
+    this.input :+= inVCF
     this.tranches_file = inTranches
     this.recal_file = inRecal
     this.ts_filter_level = 99.0
@@ -202,9 +213,11 @@ class CancerCallingPipeline extends QScript {
   }
 
   case class evaluateSNPs(inVCF: File, outEval: File) extends VariantEval with CommandLineGATKArgs {
-    this.rodBind :+= RodBind("eval", "VCF", inVCF)
-    this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp)
-    this.VT = List(VariantContext.Type.SNP)
+    //this.rodBind :+= RodBind("eval", "VCF", inVCF)
+    this.eval :+= inVCF
+    //this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp)
+    this.D = dbsnp
+    //this.VT = List(VariantContext.Type.SNP)
     this.out = outEval
 
     this.analysisName = queueLogDir + outEval + ".variantEvalSNPs"
@@ -212,9 +225,11 @@ class CancerCallingPipeline extends QScript {
   }
 
   case class evaluateIndels(inVCF: File, outEval: File) extends VariantEval with CommandLineGATKArgs {
-    this.rodBind :+= RodBind("eval", "VCF", inVCF)
-    this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp)
-    this.VT = List(VariantContext.Type.INDEL)
+    //this.rodBind :+= RodBind("eval", "VCF", inVCF)
+    this.eval :+= inVCF
+    //this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp)
+    this.D = dbsnp
+    //this.VT = List(VariantContext.Type.INDEL)
     this.out = outEval
 
     this.analysisName = queueLogDir + outEval + ".variantEvalIndels"

@@ -44,8 +44,8 @@ class GridEngineJobRunner(session: Session, function: CommandLineFunction) exten
     var nativeSpec: String = "-V"
 
     //run on tool box server
-    //nativeSpec += " -l cluster=chemgroup2"
-    //nativeSpec += " -l lilly_queue_priority=low"
+    nativeSpec += " -l cluster=chemgroup2"
+    nativeSpec += " -l lilly_queue_priority=low"
 
     //run on brianic server
     //nativeSpec += " -l cluster=brainiac"
@@ -53,30 +53,32 @@ class GridEngineJobRunner(session: Session, function: CommandLineFunction) exten
     //nativeSpec += " -l per_host=1"
 
     //run on ngs server (sent to both tool box and brainiac)
-    nativeSpec += " -l cluster=ngs"
+    //nativeSpec += " -l cluster=ngs"
 
 
     // If a project name is set specify the project name
     if (function.jobProject != null)
-      nativeSpec += " -P " + function.jobProject
+      //nativeSpec += " -P " + function.jobProject
 
     // If the job queue is set specify the job queue
     if (function.jobQueue != null)
-      nativeSpec += " -q " + function.jobQueue
+      //nativeSpec += " -q " + function.jobQueue
 
     // If the resident set size is requested pass on the memory request
     if (function.residentRequest.isDefined)
-      nativeSpec += " -l mem_free=%dM".format(function.residentRequest.map(_ * 1024).get.ceil.toInt)
+      //nativeSpec += " -l mem_free=%dM".format(function.residentRequest.map(_ * 1024).get.ceil.toInt)
 
     // If the resident set size limit is defined specify the memory limit
     if (function.residentLimit.isDefined)
-      nativeSpec += " -l h_rss=%dM".format(function.residentLimit.map(_ * 1024).get.ceil.toInt)
+      //nativeSpec += " -l h_rss=%dM".format(function.residentLimit.map(_ * 1024).get.ceil.toInt)
 
     // Pass on any job resource requests
     nativeSpec += function.jobResourceRequests.map(" -l " + _).mkString
 
     // Pass on any job environment names
     nativeSpec += function.jobEnvironmentNames.map(" -pe " + _).mkString
+
+    println(nativeSpec)
 
     // If the priority is set specify the priority
     val priority = functionPriority

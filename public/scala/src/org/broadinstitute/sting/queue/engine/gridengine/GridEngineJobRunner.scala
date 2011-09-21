@@ -58,11 +58,11 @@ class GridEngineJobRunner(session: Session, function: CommandLineFunction) exten
 
     // If a project name is set specify the project name
     if (function.jobProject != null)
-      //nativeSpec += " -P " + function.jobProject
+      nativeSpec += " -P " + function.jobProject
 
     // If the job queue is set specify the job queue
     if (function.jobQueue != null)
-      //nativeSpec += " -q " + function.jobQueue
+      nativeSpec += " -q " + function.jobQueue
 
     // If the resident set size is requested pass on the memory request
     if (function.residentRequest.isDefined)

@@ -28,7 +28,7 @@ export HOME=/lrlhps/users/c085541/GATK
 export JAVA_HOME=$HOME/opt/jdk1.6.0_27/
 export PATH=$HOME/opt/apache-ant-1.8.2/bootstrap/bin:$HOME/opt/apache-ant-1.8.2/dist/bin:$HOME/opt/jdk1.6.0_27/bin:$HOME/opt/jdk1.6.0_27/db/bin:$HOME/opt/jdk1.6.0_27/jre/bin:$HOME/opt/git-1.7.6/bin:$HOME/opt/git-1.7.6/perl/blib/bin:$HOME/opt/bwa-0.5.9:$HOME/opt/samtools-0.1.17:$HOME/opt/jets3t-0.8.1/bin:$HOME/opt/R-2.13.1/bin/:$PATH
 
-export WORK=/lrlhps/scratch/c085541/ACRG/work
+export WORK=/lrlhps/scratch/c085541/ACRG/work/$SM/$CHR/aggregation
 
 export RESOURCES=$WORK/resources
 export TMP=$WORK/tmp

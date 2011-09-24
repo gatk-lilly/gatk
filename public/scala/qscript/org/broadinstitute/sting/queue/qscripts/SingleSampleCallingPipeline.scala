@@ -56,10 +56,9 @@ class SingleSampleCallingPipeline extends QScript {
     else if (qscript.intervals != null) this.intervals :+= qscript.intervals
   }
 
-  case class callVariants(inBam: List[java.io.File], outVCF: File) extends UnifiedGenotyper with CommandLineGATKArgs {
+  case class callVariants(inBam: List[java.io.File], outVCF: File, dbSNP: File) extends UnifiedGenotyper with CommandLineGATKArgs {
     this.input_file = inBam
-    //this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp)
-    this.D = dbsnp
+    this.D = dbSNP
     this.out = outVCF
     this.glm = org.broadinstitute.sting.gatk.walkers.genotyper.GenotypeLikelihoodsCalculationModel.Model.BOTH
     this.baq = org.broadinstitute.sting.utils.baq.BAQ.CalculationMode.OFF
@@ -204,24 +203,18 @@ class SingleSampleCallingPipeline extends QScript {
     this.jobName =  queueLogDir + outVCF + ".applyRecalibrationToIndels"
   }
 
-  case class evaluateSNPs(inVCF: File, outEval: File) extends VariantEval with CommandLineGATKArgs {
-    //this.rodBind :+= RodBind("eval", "VCF", inVCF)
+  case class evaluateSNPs(inVCF: File, outEval: File, dbSNP: File) extends VariantEval with CommandLineGATKArgs {
     this.eval :+= inVCF
-    //this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp)
-    this.D = dbsnp
-    //this.VT :+= VariantContext.Type.SNP
+    this.D = dbSNP
     this.out = outEval
 
     this.analysisName = queueLogDir + outEval + ".variantEvalSNPs"
     this.jobName =  queueLogDir + outEval + ".variantEvalSNPs"
   }
 
-  case class evaluateIndels(inVCF: File, outEval: File) extends VariantEval with CommandLineGATKArgs {
-    //this.rodBind :+= RodBind("eval", "VCF", inVCF)
+  case class evaluateIndels(inVCF: File, outEval: File, dbSNP: File) extends VariantEval with CommandLineGATKArgs {
     this.eval :+= inVCF
-    //this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp)
-    this.D = dbsnp
-    //this.VT = List(VariantContext.Type.INDEL)
+    this.D = dbSNP
     this.out = outEval
 
     this.analysisName = queueLogDir + outEval + ".variantEvalIndels"
@@ -263,24 +256,24 @@ class SingleSampleCallingPipeline extends QScript {
     val evalIndels                 = "single_sample/soft_filtered/variants.soft_filtered.indels.eval"
 
     add(
-      callVariants(bams, rawVariants),
+      callVariants(bams, rawVariants, dbsnp),
 
       // HARD FILTERS:
       selectSNPs(rawVariants, rawSNPs),
       filterSNPs(rawSNPs, filteredSNPs),
-      evaluateSNPs(filteredSNPs, filteredSNPsEval),
+      evaluateSNPs(filteredSNPs, filteredSNPsEval, dbsnp),
 
       selectIndels(rawVariants, rawIndels),
       filterIndels(rawIndels, filteredIndels),
-      evaluateIndels(filteredIndels, filteredIndelsEval),
+      evaluateIndels(filteredIndels, filteredIndelsEval, dbsnp),
 
       // SOFT FILTERS:
       recalibrateSNPs(rawVariants, rscriptSNPs, tranchesSNPs, recalSNPs),
       recalibrateIndels(rawVariants, rscriptIndels, tranchesIndels, recalIndels),
       applyRecalibrationToSNPs(rawVariants, tranchesSNPs, recalSNPs, recalibratedSNPs),
       applyRecalibrationToIndels(recalibratedSNPs, tranchesIndels, recalIndels, recalibratedVariants),
-      evaluateSNPs(recalibratedVariants, evalSNPs),
-      evaluateIndels(recalibratedVariants, evalIndels)
+      evaluateSNPs(recalibratedVariants, evalSNPs, dbsnp),
+      evaluateIndels(recalibratedVariants, evalIndels, dbsnp)
     )
   }
 }

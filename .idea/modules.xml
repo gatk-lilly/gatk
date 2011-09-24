@@ -2,8 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/public/java/Public.iml" filepath="$PROJECT_DIR$/public/java/Public.iml" />
-      <module fileurl="file://$PROJECT_DIR$/public/scala/Scala.iml" filepath="$PROJECT_DIR$/public/scala/Scala.iml" />
+      <module fileurl="file://$PROJECT_DIR$/GATK-Lilly.iml" filepath="$PROJECT_DIR$/GATK-Lilly.iml" />
     </modules>
   </component>
 </project>

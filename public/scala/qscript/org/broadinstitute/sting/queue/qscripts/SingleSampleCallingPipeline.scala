@@ -32,6 +32,7 @@ class SingleSampleCallingPipeline extends QScript {
 
   @Input(doc="DbSNP file", fullName="dbsnp", shortName="D", required=true)
   var dbsnp: File = _
+  // var dbSNP: List[File] = List()
 
   @Input(doc="Mills-Devine indels file", fullName="mdindels", shortName="MD", required=true)
   var mdindels: File = _
@@ -208,7 +209,10 @@ class SingleSampleCallingPipeline extends QScript {
     //this.rodBind :+= RodBind("eval", "VCF", inVCF)
     this.eval :+= inVCF
     //this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp)
-    this.D = dbsnp
+    //this.D = dbsnp
+    this.dbsnp = dbsnp
+    println("print out this.dbsnp")
+    println(this.dbsnp)
     //this.VT :+= VariantContext.Type.SNP
     this.out = outEval
 

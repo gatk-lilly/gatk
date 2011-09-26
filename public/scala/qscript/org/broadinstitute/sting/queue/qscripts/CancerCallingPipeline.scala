@@ -102,7 +102,7 @@ class CancerCallingPipeline extends QScript {
     this.variant = inVCF
     this.out = outVCF
     //this.indels = true
-    this.selectTypeToInclude = List(VariantContext.Type.SNP)
+    this.selectTypeToInclude = List(VariantContext.Type.INDEL)
 
     this.analysisName = queueLogDir + outVCF + ".selectIndels"
     this.jobName = queueLogDir + outVCF + ".selectIndels"

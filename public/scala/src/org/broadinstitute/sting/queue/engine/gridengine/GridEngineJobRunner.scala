@@ -66,17 +66,19 @@ class GridEngineJobRunner(session: Session, function: CommandLineFunction) exten
 
     // If the resident set size is requested pass on the memory request
     if (function.residentRequest.isDefined)
-      nativeSpec += " -l mem_free=%dM".format(function.residentRequest.map(_ * 1024).get.ceil.toInt)
+      //nativeSpec += " -l mem_free=%dM".format(function.residentRequest.map(_ * 1024).get.ceil.toInt)
 
     // If the resident set size limit is defined specify the memory limit
     if (function.residentLimit.isDefined)
-      nativeSpec += " -l h_rss=%dM".format(function.residentLimit.map(_ * 1024).get.ceil.toInt)
+      //nativeSpec += " -l h_rss=%dM".format(function.residentLimit.map(_ * 1024).get.ceil.toInt)
 
     // Pass on any job resource requests
     nativeSpec += function.jobResourceRequests.map(" -l " + _).mkString
 
     // Pass on any job environment names
     nativeSpec += function.jobEnvironmentNames.map(" -pe " + _).mkString
+
+    println(nativeSpec)
 
     // If the priority is set specify the priority
     val priority = functionPriority

@@ -65,10 +65,9 @@ class CancerCallingPipeline extends QScript {
     else if (qscript.intervals != null) this.intervals :+= qscript.intervals
   }
 
-  case class callVariants(inBam: List[java.io.File], outVCF: File) extends UnifiedGenotyper with CommandLineGATKArgs {
+  case class callVariants(inBam: List[java.io.File], outVCF: File, dbSNP: File) extends UnifiedGenotyper with CommandLineGATKArgs {
     this.input_file = inBam
-    //this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp)
-    this.D = dbsnp
+    this.D = dbSNP
     this.out = outVCF
     this.glm = org.broadinstitute.sting.gatk.walkers.genotyper.GenotypeLikelihoodsCalculationModel.Model.BOTH
     this.baq = org.broadinstitute.sting.utils.baq.BAQ.CalculationMode.OFF
@@ -212,11 +211,11 @@ class CancerCallingPipeline extends QScript {
     this.jobName =  queueLogDir + outVCF + ".applyRecalibrationToIndels"
   }
 
-  case class evaluateSNPs(inVCF: File, outEval: File) extends VariantEval with CommandLineGATKArgs {
+  case class evaluateSNPs(inVCF: File, outEval: File, dbSNP: File) extends VariantEval with CommandLineGATKArgs {
     //this.rodBind :+= RodBind("eval", "VCF", inVCF)
     this.eval :+= inVCF
     //this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp)
-    this.D = dbsnp
+    this.D = dbSNP
     //this.VT = List(VariantContext.Type.SNP)
     this.out = outEval
 
@@ -224,11 +223,11 @@ class CancerCallingPipeline extends QScript {
     this.jobName =  queueLogDir + outEval + ".variantEvalSNPs"
   }
 
-  case class evaluateIndels(inVCF: File, outEval: File) extends VariantEval with CommandLineGATKArgs {
+  case class evaluateIndels(inVCF: File, outEval: File, dbSNP: File) extends VariantEval with CommandLineGATKArgs {
     //this.rodBind :+= RodBind("eval", "VCF", inVCF)
     this.eval :+= inVCF
     //this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp)
-    this.D = dbsnp
+    this.D = dbSNP
     //this.VT = List(VariantContext.Type.INDEL)
     this.out = outEval
 
@@ -301,7 +300,7 @@ class CancerCallingPipeline extends QScript {
     val normalEvalIndels           = "soft_filtered/normal/normal.soft_filtered.indels.eval"
 
     add(
-      callVariants(bams, rawVariants),
+      callVariants(bams, rawVariants, dbsnp),
 
       // HARD FILTERS:
       // filter
@@ -313,17 +312,17 @@ class CancerCallingPipeline extends QScript {
 
       // evaluate snps
       selectSamples(filteredSNPs, tumorSamples, filteredTumorSNPs),
-      evaluateSNPs(filteredTumorSNPs, filteredTumorSNPsEval),
+      evaluateSNPs(filteredTumorSNPs, filteredTumorSNPsEval, dbsnp),
 
       selectSamples(filteredSNPs, normalSamples, filteredNormalSNPs),
-      evaluateSNPs(filteredNormalSNPs, filteredNormalSNPsEval),
+      evaluateSNPs(filteredNormalSNPs, filteredNormalSNPsEval, dbsnp),
 
       // evaluate indels
       selectSamples(filteredIndels, tumorSamples, filteredTumorIndels),
-      evaluateIndels(filteredTumorIndels, filteredTumorIndelsEval),
+      evaluateIndels(filteredTumorIndels, filteredTumorIndelsEval, dbsnp),
 
       selectSamples(filteredIndels, normalSamples, filteredNormalIndels),
-      evaluateIndels(filteredNormalIndels, filteredNormalIndelsEval),
+      evaluateIndels(filteredNormalIndels, filteredNormalIndelsEval, dbsnp),
 
       // SOFT FILTERS:
       // tumor
@@ -333,8 +332,8 @@ class CancerCallingPipeline extends QScript {
       recalibrateIndels(tumorRawAnnotatedVariants, tumorRscriptIndels, tumorTranchesIndels, tumorRecalIndels),
       applyRecalibrationToSNPs(tumorRawAnnotatedVariants, tumorTranchesSNPs, tumorRecalSNPs, tumorRecalibratedSNPs),
       applyRecalibrationToIndels(tumorRecalibratedSNPs, tumorTranchesIndels, tumorRecalIndels, tumorRecalibratedVariants),
-      evaluateSNPs(tumorRecalibratedVariants, tumorEvalSNPs),
-      evaluateIndels(tumorRecalibratedVariants, tumorEvalIndels),
+      evaluateSNPs(tumorRecalibratedVariants, tumorEvalSNPs, dbsnp),
+      evaluateIndels(tumorRecalibratedVariants, tumorEvalIndels, dbsnp),
 
       // normal
       selectSamples(rawVariants, normalSamples, normalRawVariants),
@@ -343,8 +342,8 @@ class CancerCallingPipeline extends QScript {
       recalibrateIndels(normalRawAnnotatedVariants, normalRscriptIndels, normalTranchesIndels, normalRecalIndels),
       applyRecalibrationToSNPs(normalRawAnnotatedVariants, normalTranchesSNPs, normalRecalSNPs, normalRecalibratedSNPs),
       applyRecalibrationToIndels(normalRecalibratedSNPs, normalTranchesIndels, normalRecalIndels, normalRecalibratedVariants),
-      evaluateSNPs(normalRecalibratedVariants, normalEvalSNPs),
-      evaluateIndels(normalRecalibratedVariants, normalEvalIndels)
+      evaluateSNPs(normalRecalibratedVariants, normalEvalSNPs, dbsnp),
+      evaluateIndels(normalRecalibratedVariants, normalEvalIndels, dbsnp)
     )
   }
 }

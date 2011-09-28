@@ -151,7 +151,10 @@ class CancerCallingPipeline extends QScript {
     //this.rodBind :+= RodBind("dbsnp", "VCF", dbsnp, "known=true,training=false,truth=false,prior=10.0")
     this.resource :+= TaggedFile(dbsnp, "known=true,training=false,truth=false,prior=10.0")
 
-    this.use_annotation ++= List("QD", "HaplotypeScore", "MQRankSum", "ReadPosRankSum", "FS", "MQ", "DP", "InbreedingCoeff")
+    //error and complains about InbreedingCoeff when running on four samples
+    //this.use_annotation ++= List("QD", "HaplotypeScore", "MQRankSum", "ReadPosRankSum", "FS", "MQ", "DP", "InbreedingCoeff")
+   this.use_annotation ++= List("QD", "HaplotypeScore", "MQRankSum", "ReadPosRankSum", "FS", "MQ", "DP")
+
     this.allPoly = true
     this.mode = VariantRecalibratorArgumentCollection.Mode.SNP
 
@@ -170,7 +173,10 @@ class CancerCallingPipeline extends QScript {
     //this.rodBind :+= RodBind("training", "VCF", mdindels, "known=true,training=true,truth=true,prior=12.0")
     this.resource :+= TaggedFile(mdindels, "known=true,training=true,truth=true,prior=12.0")
 
-    this.use_annotation ++= List("QD", "FS", "HaplotypeScore", "ReadPosRankSum", "InbreedingCoeff")
+    //complains about InbreedingCoeff when running on 4 samples
+    //this.use_annotation ++= List("QD", "FS", "HaplotypeScore", "ReadPosRankSum", "InbreedingCoeff")
+    this.use_annotation ++= List("QD", "FS", "HaplotypeScore", "ReadPosRankSum")
+
     this.allPoly = true
     this.mode = VariantRecalibratorArgumentCollection.Mode.INDEL
 
@@ -247,57 +253,68 @@ class CancerCallingPipeline extends QScript {
     bams ++= tb
     bams ++= nb
 
-    val rawVariants                = "intermediate/variants/raw.vcf"
+    val rawVariants                = "multiple_sample/.intermediate/variants/raw.vcf"
 
-    val rawSNPs                    = "intermediate/snps/raw.vcf"
-    val filteredSNPs               = "hard_filtered/snps/snps.hard_filtered.vcf"
-    val filteredTumorSNPs          = "hard_filtered/snps/snps.hard_filtered.tumors.vcf"
-    val filteredTumorSNPsEval      = "hard_filtered/snps/snps.hard_filtered.tumors.eval"
-    val filteredNormalSNPs         = "hard_filtered/snps/snps.hard_filtered.normals.vcf"
-    val filteredNormalSNPsEval     = "hard_filtered/snps/snps.hard_filtered.normals.eval"
+    val rawSNPs                    = "multiple_sample/.intermediate/snps/raw.vcf"
+    val filteredSNPs               = "multiple_sample/hard_filtered/snps/snps.hard_filtered.vcf"
+    val filteredTumorSNPs          = "multiple_sample/hard_filtered/snps/snps.hard_filtered.tumors.vcf"
+    val filteredTumorSNPsEval      = "multiple_sample/hard_filtered/snps/snps.hard_filtered.tumors.eval"
+    val filteredNormalSNPs         = "multiple_sample/hard_filtered/snps/snps.hard_filtered.normals.vcf"
+    val filteredNormalSNPsEval     = "multiple_sample/hard_filtered/snps/snps.hard_filtered.normals.eval"
 
-    val rawIndels                  = "intermediate/indels/raw.vcf"
-    val filteredIndels             = "hard_filtered/indels/indels.hard_filtered.vcf"
-    val filteredTumorIndels        = "hard_filtered/indels/indels.hard_filtered.tumors.vcf"
-    val filteredTumorIndelsEval    = "hard_filtered/indels/indels.hard_filtered.tumors.eval"
-    val filteredNormalIndels       = "hard_filtered/indels/indels.hard_filtered.normals.vcf"
-    val filteredNormalIndelsEval   = "hard_filtered/indels/indels.hard_filtered.normals.eval"
+    val rawIndels                  = "multiple_sample/.intermediate/indels/raw.vcf"
+    val filteredIndels             = "multiple_sample/hard_filtered/indels/indels.hard_filtered.vcf"
+    val filteredTumorIndels        = "multiple_sample/hard_filtered/indels/indels.hard_filtered.tumors.vcf"
+    val filteredTumorIndelsEval    = "multiple_sample/hard_filtered/indels/indels.hard_filtered.tumors.eval"
+    val filteredNormalIndels       = "multiple_sample/hard_filtered/indels/indels.hard_filtered.normals.vcf"
+    val filteredNormalIndelsEval   = "multiple_sample/hard_filtered/indels/indels.hard_filtered.normals.eval"
 
     // Tumor-specific files
-    val tumorRawVariants           = "intermediate/variants/tumor/raw.vcf"
-    val tumorRawAnnotatedVariants  = "intermediate/variants/tumor/raw.annotated.vcf"
+    val tumorRawVariants           = "multiple_sample/.intermediate/variants/tumor/raw.vcf"
+    val tumorRawAnnotatedVariants  = "multiple_sample/.intermediate/variants/tumor/raw.annotated.vcf"
 
-    val tumorRscriptSNPs           = "intermediate/variants/tumor/snps.vqsr.R"
-    val tumorTranchesSNPs          = "intermediate/variants/tumor/snps.tranches"
-    val tumorRecalSNPs             = "intermediate/variants/tumor/snps.recal"
+    val tumorRscriptSNPs           = "multiple_sample/.intermediate/variants/tumor/snps.vqsr.R"
+    val tumorTranchesSNPs          = "multiple_sample/.intermediate/variants/tumor/snps.tranches"
+    val tumorRecalSNPs             = "multiple_sample/.intermediate/variants/tumor/snps.recal"
 
-    val tumorRscriptIndels         = "intermediate/variants/tumor/indels.vqsr.R"
-    val tumorTranchesIndels        = "intermediate/variants/tumor/indels.tranches"
-    val tumorRecalIndels           = "intermediate/variants/tumor/indels.recal"
+    val tumorRscriptIndels         = "multiple_sample/.intermediate/variants/tumor/indels.vqsr.R"
+    val tumorTranchesIndels        = "multiple_sample/.intermediate/variants/tumor/indels.tranches"
+    val tumorRecalIndels           = "multiple_sample/.intermediate/variants/tumor/indels.recal"
 
-    val tumorRecalibratedSNPs      = "intermediate/variants/tumor/partially_recalibrated.vcf"
+    val tumorRecalibratedSNPs      = "multiple_sample/.intermediate/variants/tumor/partially_recalibrated.vcf"
 
-    val tumorRecalibratedVariants  = "soft_filtered/tumor/tumor.soft_filtered.vcf"
-    val tumorEvalSNPs              = "soft_filtered/tumor/tumor.soft_filtered.snps.eval"
-    val tumorEvalIndels            = "soft_filtered/tumor/tumor.soft_filtered.indels.eval"
+    val tumorRecalibratedVariants  = "multiple_sample/soft_filtered/tumor/tumor.soft_filtered.vcf"
+
+    //JW added the following two lines
+    val tumorFinalSNPs             = "multiple_sample/soft_filtered/tumor/tumorSNPs.soft_filtered.vcf"
+    val tumorFinalIndels           = "multiple_sample/soft_filtered/tumor/tumorIndels.soft_filtered.vcf"
+
+    val tumorEvalSNPs              = "multiple_sample/soft_filtered/tumor/tumor.soft_filtered.snps.eval"
+    val tumorEvalIndels            = "multiple_sample/soft_filtered/tumor/tumor.soft_filtered.indels.eval"
 
     // Normal-specific files
-    val normalRawVariants          = "intermediate/variants/normal/raw.vcf"
-    val normalRawAnnotatedVariants = "intermediate/variants/normal/raw.annotated.vcf"
+    val normalRawVariants          = "multiple_sample/.intermediate/variants/normal/raw.vcf"
+    val normalRawAnnotatedVariants = "multiple_sample/.intermediate/variants/normal/raw.annotated.vcf"
 
-    val normalRscriptSNPs          = "intermediate/variants/normal/snps.vqsr.R"
-    val normalTranchesSNPs         = "intermediate/variants/normal/snps.tranches"
-    val normalRecalSNPs            = "intermediate/variants/normal/snps.recal"
+    val normalRscriptSNPs          = "multiple_sample/.intermediate/variants/normal/snps.vqsr.R"
+    val normalTranchesSNPs         = "multiple_sample/.intermediate/variants/normal/snps.tranches"
+    val normalRecalSNPs            = "multiple_sample/.intermediate/variants/normal/snps.recal"
 
-    val normalRscriptIndels        = "intermediate/variants/normal/indels.vqsr.R"
-    val normalTranchesIndels       = "intermediate/variants/normal/indels.tranches"
-    val normalRecalIndels          = "intermediate/variants/normal/indels.recal"
+    val normalRscriptIndels        = "multiple_sample/.intermediate/variants/normal/indels.vqsr.R"
+    val normalTranchesIndels       = "multiple_sample/.intermediate/variants/normal/indels.tranches"
+    val normalRecalIndels          = "multiple_sample/.intermediate/variants/normal/indels.recal"
 
-    val normalRecalibratedSNPs     = "intermediate/variants/normal/partially_recalibrated.vcf"
+    val normalRecalibratedSNPs     = "multiple_sample/.intermediate/variants/normal/partially_recalibrated.vcf"
 
-    val normalRecalibratedVariants = "soft_filtered/normal/normal.soft_filtered.vcf"
-    val normalEvalSNPs             = "soft_filtered/normal/normal.soft_filtered.snps.eval"
-    val normalEvalIndels           = "soft_filtered/normal/normal.soft_filtered.indels.eval"
+    val normalRecalibratedVariants = "multiple_sample/soft_filtered/normal/normal.soft_filtered.vcf"
+
+    //JW added the following two lines
+    val normalFinalSNPs             = "multiple_sample/soft_filtered/normal/normalSNPs.soft_filtered.vcf"
+    val normalFinalIndels           = "multiple_sample/soft_filtered/normal/normalIndels.soft_filtered.vcf"
+
+    val normalEvalSNPs             = "multiple_sample/soft_filtered/normal/normal.soft_filtered.snps.eval"
+    val normalEvalIndels           = "multiple_sample/soft_filtered/normal/normal.soft_filtered.indels.eval"
+
 
     add(
       callVariants(bams, rawVariants, dbsnp),
@@ -332,8 +349,15 @@ class CancerCallingPipeline extends QScript {
       recalibrateIndels(tumorRawAnnotatedVariants, tumorRscriptIndels, tumorTranchesIndels, tumorRecalIndels),
       applyRecalibrationToSNPs(tumorRawAnnotatedVariants, tumorTranchesSNPs, tumorRecalSNPs, tumorRecalibratedSNPs),
       applyRecalibrationToIndels(tumorRecalibratedSNPs, tumorTranchesIndels, tumorRecalIndels, tumorRecalibratedVariants),
-      evaluateSNPs(tumorRecalibratedVariants, tumorEvalSNPs, dbsnp),
-      evaluateIndels(tumorRecalibratedVariants, tumorEvalIndels, dbsnp),
+
+      // evaluateSNPs(tumorRecalibratedVariants, tumorEvalSNPs, dbsnp),
+      // evaluateIndels(tumorRecalibratedVariants, tumorEvalIndels, dbsnp),
+
+      // JW added the following 4 lines
+      selectSNPs(tumorRecalibratedVariants, tumorFinalSNPs),
+      selectIndels(tumorRecalibratedVariants, tumorFinalIndels),
+      evaluateSNPs(tumorFinalSNPs, tumorEvalSNPs, dbsnp),
+      evaluateIndels(tumorFinalIndels, tumorEvalIndels, dbsnp),
 
       // normal
       selectSamples(rawVariants, normalSamples, normalRawVariants),
@@ -342,8 +366,14 @@ class CancerCallingPipeline extends QScript {
       recalibrateIndels(normalRawAnnotatedVariants, normalRscriptIndels, normalTranchesIndels, normalRecalIndels),
       applyRecalibrationToSNPs(normalRawAnnotatedVariants, normalTranchesSNPs, normalRecalSNPs, normalRecalibratedSNPs),
       applyRecalibrationToIndels(normalRecalibratedSNPs, normalTranchesIndels, normalRecalIndels, normalRecalibratedVariants),
-      evaluateSNPs(normalRecalibratedVariants, normalEvalSNPs, dbsnp),
-      evaluateIndels(normalRecalibratedVariants, normalEvalIndels, dbsnp)
+      // evaluateSNPs(normalRecalibratedVariants, normalEvalSNPs, dbsnp),
+      // evaluateIndels(normalRecalibratedVariants, normalEvalIndels, dbsnp)
+
+      // JW added the following 4 lines
+      selectSNPs(normalRecalibratedVariants, normalFinalSNPs),
+      selectIndels(normalRecalibratedVariants, normalFinalIndels),
+      evaluateSNPs(normalFinalSNPs, normalEvalSNPs, dbsnp),
+      evaluateIndels(normalFinalIndels, normalEvalIndels, dbsnp)
     )
   }
 }

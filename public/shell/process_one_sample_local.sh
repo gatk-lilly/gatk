@@ -23,12 +23,12 @@ export LANES=${@:5:$#}
 # Note : There should not be space around the "=" sign  ; bash creates problem
 
 #export HOME=/shared/home/lilly-collab
-export HOME=/lrlhps/users/c085541/GATK
+export HOME=/lrlhps/users/rx97023/GATK
 
 export JAVA_HOME=$HOME/opt/jdk1.6.0_27/
 export PATH=$HOME/opt/apache-ant-1.8.2/bootstrap/bin:$HOME/opt/apache-ant-1.8.2/dist/bin:$HOME/opt/jdk1.6.0_27/bin:$HOME/opt/jdk1.6.0_27/db/bin:$HOME/opt/jdk1.6.0_27/jre/bin:$HOME/opt/git-1.7.6/bin:$HOME/opt/git-1.7.6/perl/blib/bin:$HOME/opt/bwa-0.5.9:$HOME/opt/samtools-0.1.17:$HOME/opt/jets3t-0.8.1/bin:$HOME/opt/R-2.13.1/bin/:$PATH
 
-export WORK=/lrlhps/scratch/c085541/ACRG/work/$SM/$CHR/aggregation
+export WORK=/lrlhps/scratch/rx97023/ACRG/work/$SM/$CHR/aggregation
 
 export RESOURCES=$WORK/resources
 export TMP=$WORK/tmp
@@ -89,15 +89,14 @@ $HOME/opt/samtools-0.1.17/samtools index $MERGED_BAM
 
 echo "Running sample-level pipeline..."
 $QUEUE -S $HOME/opt/GATK-Lilly/public/scala/qscript/org/broadinstitute/sting/queue/qscripts/DataProcessingPipeline.scala -i $MERGED_BAM -r $HOME/opt/GATK-Lilly/public/R -R $RESOURCES/ucsc.hg19.fasta -D $RESOURCES/dbsnp_132.hg19.vcf -indels $RESOURCES/1000G_indels_for_realignment.hg19.vcf -L $CHR -nv -p processed -run
-ln -s processed.$SM.clean.dedup.recal.bam $BAM
-ln -s processed.$SM.clean.dedup.recal.bai $BAI
+
 tar -cf processed.$ID.pre.tar processed.$SM.pre/ && gzip processed.$ID.pre.tar
 tar -cf processed.$ID.post.tar processed.$SM.post/ && gzip processed.$ID.post.tar
 
 echo "Uploading results..."
 
-mv $BAM $S3_UPLOAD_PATH
-mv $BAI $S3_UPLOAD_PATH 
+mv processed.$SM.clean.dedup.recal.bam $S3_UPLOAD_PATH/$BAM
+mv processed.$SM.clean.dedup.recal.bai $S3_UPLOAD_PATH/$BAI
 mv processed.$ID.pre.tar.gz $S3_UPLOAD_PATH
 mv processed.$ID.post.tar.gz $S3_UPLOAD_PATH
 

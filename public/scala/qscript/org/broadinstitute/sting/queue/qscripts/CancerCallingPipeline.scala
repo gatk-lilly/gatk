@@ -159,10 +159,12 @@ class CancerCallingPipeline extends QScript {
     this.mode = VariantRecalibratorArgumentCollection.Mode.SNP
 
     this.tranche ++= List("100.0", "99.9", "99.5", "99.3", "99.0", "98.9", "98.8", "98.5", "98.4", "98.3", "98.2", "98.1", "98.0", "97.9", "97.8", "97.5", "97.0", "95.0", "90.0")
+    //this.tranche ++= List("100.0", "99.0", "98.0", "97.0", "96.0", "95.0", "90.0")
     this.rscript_file = outRscript
     this.tranches_file = outTranches
     this.recal_file = outRecal
 
+    this.jobNativeArgs :+="-q all.ngs.q@@ngstoolbox"
     this.analysisName = queueLogDir + outRecal + ".recalibrateSNPs"
     this.jobName =  queueLogDir + outRecal + ".recalibrateSNPs"
   }
@@ -174,16 +176,18 @@ class CancerCallingPipeline extends QScript {
     this.resource :+= TaggedFile(mdindels, "known=true,training=true,truth=true,prior=12.0")
 
     //complains about InbreedingCoeff when running on 4 samples
-    //this.use_annotation ++= List("QD", "FS", "HaplotypeScore", "ReadPosRankSum", "InbreedingCoeff")
-    this.use_annotation ++= List("QD", "FS", "HaplotypeScore", "ReadPosRankSum")
+    this.use_annotation ++= List("QD", "FS", "HaplotypeScore", "ReadPosRankSum", "InbreedingCoeff")
+    //this.use_annotation ++= List("QD", "FS", "HaplotypeScore", "ReadPosRankSum")
 
     this.allPoly = true
     this.mode = VariantRecalibratorArgumentCollection.Mode.INDEL
 
     this.tranche ++= List("100.0", "99.9", "99.5", "99.3", "99.0", "98.9", "98.8", "98.5", "98.4", "98.3", "98.2", "98.1", "98.0", "97.9", "97.8", "97.5", "97.0", "95.0", "90.0")
+    //this.tranche ++= List("100.0", "99.0", "98.0", "97.0", "96.0", "95.0", "90.0")
     this.rscript_file = outRscript
     this.tranches_file = outTranches
     this.recal_file = outRecal
+    this.jobNativeArgs :+="-q all.ngs.q@@ngstoolbox"
 
     this.analysisName = queueLogDir + outRecal + ".recalibrateIndels"
     this.jobName =  queueLogDir + outRecal + ".recalibrateIndels"
@@ -199,6 +203,7 @@ class CancerCallingPipeline extends QScript {
     this.out = outVCF
 
     this.memoryLimit = 32;
+    this.jobNativeArgs :+="-q all.ngs.q@@ngstoolbox"
     this.analysisName = queueLogDir + outVCF + ".applyRecalibrationToSNPs"
     this.jobName =  queueLogDir + outVCF + ".applyRecalibrationToSNPs"
   }
@@ -213,6 +218,7 @@ class CancerCallingPipeline extends QScript {
     this.out = outVCF
 
     this.memoryLimit = 32;
+    this.jobNativeArgs :+="-q all.ngs.q@@ngstoolbox"
     this.analysisName = queueLogDir + outVCF + ".applyRecalibrationToIndels"
     this.jobName =  queueLogDir + outVCF + ".applyRecalibrationToIndels"
   }
@@ -227,6 +233,7 @@ class CancerCallingPipeline extends QScript {
 
     this.analysisName = queueLogDir + outEval + ".variantEvalSNPs"
     this.jobName =  queueLogDir + outEval + ".variantEvalSNPs"
+    this.jobNativeArgs :+="-q all.ngs.q@@ngstoolbox"
   }
 
   case class evaluateIndels(inVCF: File, outEval: File, dbSNP: File) extends VariantEval with CommandLineGATKArgs {
@@ -239,6 +246,7 @@ class CancerCallingPipeline extends QScript {
 
     this.analysisName = queueLogDir + outEval + ".variantEvalIndels"
     this.jobName =  queueLogDir + outEval + ".variantEvalIndels"
+    this.jobNativeArgs :+="-q all.ngs.q@@ngstoolbox"
   }
 
   /****************************************************************************
@@ -327,14 +335,14 @@ class CancerCallingPipeline extends QScript {
       selectIndels(rawVariants, rawIndels),
       filterIndels(rawIndels, filteredIndels),
 
-      // evaluate snps
+      evaluate snps
       selectSamples(filteredSNPs, tumorSamples, filteredTumorSNPs),
       evaluateSNPs(filteredTumorSNPs, filteredTumorSNPsEval, dbsnp),
 
       selectSamples(filteredSNPs, normalSamples, filteredNormalSNPs),
       evaluateSNPs(filteredNormalSNPs, filteredNormalSNPsEval, dbsnp),
 
-      // evaluate indels
+      evaluate indels
       selectSamples(filteredIndels, tumorSamples, filteredTumorIndels),
       evaluateIndels(filteredTumorIndels, filteredTumorIndelsEval, dbsnp),
 

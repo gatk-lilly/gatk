@@ -57,7 +57,7 @@ class CancerCallingPipeline extends QScript {
   val queueLogDir: String = ".qlog/"  // Gracefully hide Queue's output
 
   trait CommandLineGATKArgs extends CommandLineGATK {
-    this.memoryLimit = 4;
+    this.memoryLimit = 3;
     this.reference_sequence = qscript.reference
     this.isIntermediate = false
 
@@ -84,6 +84,8 @@ class CancerCallingPipeline extends QScript {
     this.out = outVCF
     this.excludeNonVariants = true
 
+    this.memoryLimit = 32
+    this.jobNativeArgs :+="-q all.ngs.q@@ngstoolbox"
     this.analysisName = queueLogDir + outVCF + ".selectVariants"
     this.jobName = queueLogDir + outVCF + ".selectVariants"
   }
@@ -94,6 +96,8 @@ class CancerCallingPipeline extends QScript {
     //this.snps = true
     this.selectTypeToInclude = List(VariantContext.Type.SNP)
 
+    this.memoryLimit = 32
+    this.jobNativeArgs :+="-q all.ngs.q@@ngstoolbox"
     this.analysisName = queueLogDir + outVCF + ".selectSNPs"
     this.jobName = queueLogDir + outVCF + ".selectSNPs"
   }
@@ -104,6 +108,8 @@ class CancerCallingPipeline extends QScript {
     //this.indels = true
     this.selectTypeToInclude = List(VariantContext.Type.INDEL)
 
+    this.memoryLimit = 32
+    this.jobNativeArgs :+="-q all.ngs.q@@ngstoolbox"
     this.analysisName = queueLogDir + outVCF + ".selectIndels"
     this.jobName = queueLogDir + outVCF + ".selectIndels"
   }
@@ -115,6 +121,9 @@ class CancerCallingPipeline extends QScript {
     this.filterExpression ++= List("\"QD<5.0\"", "\"HRun>5\"", "\"FS>200.0\"")
 
     this.scatterCount = 10
+    this.memoryLimit = 4
+    this.jobNativeArgs :+="-q all.ngs.q@@ngstoolbox"
+
     this.analysisName = queueLogDir + outVCF + ".filterSNPs"
     this.jobName =  queueLogDir + outVCF + ".filterSNPs"
   }
@@ -126,6 +135,8 @@ class CancerCallingPipeline extends QScript {
     this.filterExpression ++= List("\"QD<2.0\"", "\"ReadPosRankSum<-20.0\"", "\"FS>200.0\"")
 
     this.scatterCount = 10
+    this.memoryLimit = 4
+    this.jobNativeArgs :+="-q all.ngs.q@@ngstoolbox"
     this.analysisName = queueLogDir + outVCF + ".filterIndels"
     this.jobName =  queueLogDir + outVCF + ".filterIndels"
   }
@@ -163,7 +174,7 @@ class CancerCallingPipeline extends QScript {
     this.rscript_file = outRscript
     this.tranches_file = outTranches
     this.recal_file = outRecal
-
+    this.memoryLimit = 32
     this.jobNativeArgs :+="-q all.ngs.q@@ngstoolbox"
     this.analysisName = queueLogDir + outRecal + ".recalibrateSNPs"
     this.jobName =  queueLogDir + outRecal + ".recalibrateSNPs"
@@ -187,6 +198,7 @@ class CancerCallingPipeline extends QScript {
     this.rscript_file = outRscript
     this.tranches_file = outTranches
     this.recal_file = outRecal
+    this.memoryLimit = 32
     this.jobNativeArgs :+="-q all.ngs.q@@ngstoolbox"
 
     this.analysisName = queueLogDir + outRecal + ".recalibrateIndels"
@@ -234,6 +246,7 @@ class CancerCallingPipeline extends QScript {
     this.analysisName = queueLogDir + outEval + ".variantEvalSNPs"
     this.jobName =  queueLogDir + outEval + ".variantEvalSNPs"
     this.jobNativeArgs :+="-q all.ngs.q@@ngstoolbox"
+    this.memoryLimit = 16;
   }
 
   case class evaluateIndels(inVCF: File, outEval: File, dbSNP: File) extends VariantEval with CommandLineGATKArgs {
@@ -247,6 +260,7 @@ class CancerCallingPipeline extends QScript {
     this.analysisName = queueLogDir + outEval + ".variantEvalIndels"
     this.jobName =  queueLogDir + outEval + ".variantEvalIndels"
     this.jobNativeArgs :+="-q all.ngs.q@@ngstoolbox"
+    this.memoryLimit = 16;
   }
 
   /****************************************************************************
@@ -335,14 +349,14 @@ class CancerCallingPipeline extends QScript {
       selectIndels(rawVariants, rawIndels),
       filterIndels(rawIndels, filteredIndels),
 
-      evaluate snps
+      //evaluate snps
       selectSamples(filteredSNPs, tumorSamples, filteredTumorSNPs),
       evaluateSNPs(filteredTumorSNPs, filteredTumorSNPsEval, dbsnp),
 
       selectSamples(filteredSNPs, normalSamples, filteredNormalSNPs),
       evaluateSNPs(filteredNormalSNPs, filteredNormalSNPsEval, dbsnp),
 
-      evaluate indels
+      //evaluate indels
       selectSamples(filteredIndels, tumorSamples, filteredTumorIndels),
       evaluateIndels(filteredTumorIndels, filteredTumorIndelsEval, dbsnp),
 

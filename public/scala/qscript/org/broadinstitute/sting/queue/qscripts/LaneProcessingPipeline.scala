@@ -64,7 +64,7 @@ class DataProcessingPipeline extends QScript {
 
     def commandLine = bwaPath + " sampe -r \'" + readGroupText + "\' " + reference + " " + sai1 + " " + sai2 + " " + fastq1 + " " + fastq2 + " > " + alignedBam
 
-    this.memoryLimit = 2
+    this.memoryLimit = 12
     this.analysisName = queueLogDir + outBam + ".bwa_sam_pe"
     this.jobName = queueLogDir + outBam + ".bwa_sam_pe"
   }

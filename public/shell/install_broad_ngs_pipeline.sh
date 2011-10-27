@@ -31,12 +31,12 @@ if [ ! -e opt/apache-ant-1.8.2-src.tar.gz ]; then
 	cd $HOME
 fi
 
-if [ ! -e opt/git-1.7.6.tar.bz2 ]; then
-	wget http://kernel.org/pub/software/scm/git/git-1.7.6.tar.bz2 -O opt/git-1.7.6.tar.bz2
-	bunzip2 -c opt/git-1.7.6.tar.bz2 | tar -C opt/ -xf -
+if [ ! -e opt/git-1.7.7.1.tar.gz ]; then
+	wget http://git-core.googlecode.com/files/git-1.7.7.1.tar.gz -O opt/git-1.7.7.1.tar.gz 
+	tar zxf opt/git-1.7.7.1.tar.gz
 
-	cd opt/git-1.7.6
-	./configure --prefix=$HOME/opt/git-1.7.6/ --without-curl
+	cd opt/git-1.7.7.1.
+	./configure --prefix=$HOME/opt/git-1.7.7.1/ --without-curl
 	make
 	make install
 	cd $HOME

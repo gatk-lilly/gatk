@@ -88,7 +88,7 @@ sub create_condor_submission_file {
 
 	print CSF "Universe = vanilla\n";
 	print CSF "Requirements = (OpSys =?= \"LINUX\") && (SlotID == 1)\n";
-	print CSF "Executable = $ENV{'HOME'}/opt/GATK-Lilly/public/shell/process_one_sample.sh\n";
+	print CSF "Executable = $ENV{'HOME'}/opt/GATK-Lilly/public/shell/process_one_paired_end_lane.sh\n";
 	print CSF "Arguments = " . join(" ", @args) . "\n";
 	print CSF "input = /dev/null\n";
 	print CSF "output = $jobdir/$logprefix"."log.out\n";
@@ -102,7 +102,7 @@ sub create_condor_submission_file {
 
 	close(CSF);
 
-	return $submission_file;
+	return ($submission_file, $log_file, $has_run_before);
 }
 
 sub get_s3_contents {

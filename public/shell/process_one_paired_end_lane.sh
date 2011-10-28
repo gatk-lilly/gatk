@@ -60,6 +60,10 @@ echo "Uploading results..."
 #$JETS3T_HOME/bin/synchronize.sh --nodelete UP $S3_UPLOAD_PATH $BAM
 #$JETS3T_HOME/bin/synchronize.sh --nodelete UP $S3_UPLOAD_PATH $BAI
 
-#python s3_upload_file.py bgi_wgs_hcc_acrg $BAM 
+s3_path=`echo $S3_UPLOAD_PATH | sed 's/s3:\/\/[A-Za-z_\-]*\///'`
+s3_bucket=`echo $S3_UPLOAD_PATH | sed 's/s3:\/\///' | sed "s/\/.*//"`
+
+python s3_upload_file.py $s3_bucket $BAM $s3_path 
+python s3_upload_file.py $s3_bucket $BAI $s3_path 
 
 echo "Done."

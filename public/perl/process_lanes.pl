@@ -75,9 +75,11 @@ sub getArgs {
 sub create_condor_submission_file {
 	my ($id, @args) = @_;
 
-	my $jobdir = ".condor_submit/$id";
+  	my $jobdir = ".condor_submit";
+	my $logprefix = $id."_";
+	my $submission_file = "$jobdir/$logprefix"."submit";
+	my $log_file = "$jobdir/$logprefix"."log.out";
 
-	my $submission_file = "$jobdir/submit";
 	if (! -e $jobdir) {
 		mkpath($jobdir);
 	}
@@ -86,14 +88,16 @@ sub create_condor_submission_file {
 
 	print CSF "Universe = vanilla\n";
 	print CSF "Requirements = (OpSys =?= \"LINUX\") && (SlotID == 1)\n";
-	print CSF "Executable = $ENV{'HOME'}/opt/GATK-Lilly/public/shell/process_one_paired_end_lane.sh\n";
+	print CSF "Executable = $ENV{'HOME'}/opt/GATK-Lilly/public/shell/process_one_sample.sh\n";
 	print CSF "Arguments = " . join(" ", @args) . "\n";
 	print CSF "input = /dev/null\n";
-	print CSF "output = $jobdir/log.out\n";
-	print CSF "error = $jobdir/log.err\n";
-	print CSF "notification = Never\n";
+	print CSF "output = $jobdir/$logprefix"."log.out\n";
+	print CSF "error = $jobdir/$logprefix"."log.err\n";
+	print CSF "StreamOut = True\n";
+	print CSF "StreamErr = True\n";
+	print CSF "notification = Error\n";
 	print CSF "should_transfer_files = YES\n";
-	print CSF "when_to_transfer_output = ON_EXIT\n";
+	print CSF "when_to_transfer_output = ON_EXIT_OR_EVICT\n";
 	print CSF "Queue\n";
 
 	close(CSF);

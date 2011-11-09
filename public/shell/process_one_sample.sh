@@ -1,13 +1,5 @@
 #!/bin/bash
 
-#$ -N LaneProcessingPipeline
-#$ -S /bin/bash
-#$ -cwd
-#$ -j y
-#$ -m be
-
-#set -x
-
 export SM=$1
 export CHR=$2
 export ID="$1.$2"
@@ -16,10 +8,9 @@ export S3_UPLOAD_ROOT=`echo $4 | sed 's/s3:\/\///' | sed 's/\/$//'`
 export S3_UPLOAD_PATH="$S3_UPLOAD_ROOT/$SM"
 export LANES=${@:5:$#}
 
-export HOME=/shared/home/lilly-collab
+export HOME=/shared/home/ngs-user
 export JAVA_HOME=$HOME/opt/jdk1.6.0_27/
-export PATH=$HOME/opt/apache-ant-1.8.2/bootstrap/bin:$HOME/opt/apache-ant-1.8.2/dist/bin:$HOME/opt/jdk1.6.0_27/bin:$HOME/opt/jdk1.6.0_27/db/bin:$HOME/opt/jdk1.6.0_27/jre/bin:$HOME/opt/git-1.7.6/bin:$HOME/opt/git-1.7.6/perl/blib/bin:$HOME/opt/bwa-0.5.9:$HOME/opt/samtools-0.1.17:$HOME/opt/jets3t-0.8.1/bin:$HOME/opt/R-2.13.1/bin/:$PATH
-export JETS3T_HOME=$HOME/opt/jets3t-0.8.1
+export PATH=$HOME/bin:$HOME/opt/Python-2.7.2/bin:$HOME/opt/aria2-1.13.0/bin:$HOME/opt/apache-ant-1.8.2/bootstrap/bin:$HOME/opt/apache-ant-1.8.2/dist/bin:$HOME/opt/jdk1.6.0_27/bin:$HOME/opt/jdk1.6.0_27/db/bin:$HOME/opt/jdk1.6.0_27/jre/bin:$HOME/opt/git-1.7.7.1/bin:$HOME/opt/git-1.7.7.1/perl/blib/bin:$HOME/opt/bwa-0.5.9:$HOME/opt/samtools-0.1.17:$HOME/opt/jets3t-0.8.1/bin:$HOME/opt/R-2.13.1/bin/:$PATH
 
 export WORK=/mnt/scratch/$SM/$CHR/aggregation
 export RESOURCES=$WORK/resources
@@ -36,6 +27,8 @@ export BAI=$ID.analysis_ready.bai
 export BAM_LIST="$LISTS/$SM.bam.list"
 export MERGED_BAM="$WORK/aggregated.$ID.bam"
 
+s3_bucket=`echo $S3_UPLOAD_PATH | sed "s/\/.*//"`
+
 echo "Creating $WORK directory..."
 rm -rf $WORK
 mkdir -p $WORK
@@ -47,8 +40,13 @@ echo "Changing to $WORK directory..."
 cd $WORK
 
 echo "Extracting NGS resources..."
-s3cmd sync s3://$S3_BUCKET/resources $WORK/
-gunzip -c $RESOURCES/resources.tar.gz | tar -C $RESOURCES -xf -
+
+#s3cmd sync s3://$S3_BUCKET/resources $WORK/
+
+#python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s resources/resources.tar.gz -d $RESOURCES -f resources.tar.gz
+#python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s resources/variant_calling_resources.tar.gz  -d $RESOURCES -f variant_calling_resources.tar.gz
+
+#gunzip -c $RESOURCES/resources.tar.gz | tar -C $RESOURCES -xf -
 
 echo "Downloading lane BAMs..."
 for LANE_BAM in $LANES
@@ -57,6 +55,15 @@ do
 
 	BAM_BASENAME=`basename $LANE_BAM`
 	BAI_BASENAME=`basename $LANE_BAI`
+ 
+        echo $LANE_BAM
+
+        s3_bam_file=`echo $LANE_BAM | sed 's/s3:\/\/[A-Za-z_\-]*\///'` 
+        echo "$HOME/bin/s3_down_file.py -b $S3_BUCKET -s $s3_bam_file -d $DATA"
+        #python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s $s3_bam_file -d $DATA 
+        
+        s3_bai_file=`echo $LANE_BAI | sed 's/s3:\/\/[A-Za-z_\-]*\///'`
+        #python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s $s3_bai_file -d $DATA 
 
 	s3cmd sync $LANE_BAM $DATA/$BAM_BASENAME
 	s3cmd sync $LANE_BAI $DATA/$BAI_BASENAME
@@ -75,11 +82,22 @@ tar -cf processed.$ID.pre.tar processed.$SM.pre/ && gzip processed.$ID.pre.tar
 tar -cf processed.$ID.post.tar processed.$SM.post/ && gzip processed.$ID.post.tar
 
 echo "Uploading results..."
-$JETS3T_HOME/bin/synchronize.sh --nodelete UP $S3_UPLOAD_PATH $BAM
-$JETS3T_HOME/bin/synchronize.sh --nodelete UP $S3_UPLOAD_PATH $BAI
-$JETS3T_HOME/bin/synchronize.sh --nodelete UP $S3_UPLOAD_PATH processed.$ID.pre.tar.gz
-$JETS3T_HOME/bin/synchronize.sh --nodelete UP $S3_UPLOAD_PATH processed.$ID.post.tar.gz
 
+s3_path=`echo $S3_UPLOAD_PATH | sed 's/[A-Za-z_\-]*\///'`
+s3_bucket=`echo $S3_UPLOAD_PATH | sed "s/\/.*//"`
+
+echo "$s3_bucket $BAM $s3_path"
+echo $BAI
+
+python $HOME/bin/s3_upload_file.py $s3_bucket $BAM $s3_path
+python $HOME/bin/s3_upload_file.py $s3_bucket $BAI $s3_path
+python $HOME/bin/s3_upload_file.py $s3_bucket processed.$ID.pre.tar.gz $s3_path
+python $HOME/bin/s3_upload_file.py $s3_bucket processed.$ID.post.tar.gz $s3_path
+
+#$JETS3T_HOME/bin/synchronize.sh --nodelete UP $S3_UPLOAD_PATH $BAM
+#$JETS3T_HOME/bin/synchronize.sh --nodelete UP $S3_UPLOAD_PATH $BAI
+#$JETS3T_HOME/bin/synchronize.sh --nodelete UP $S3_UPLOAD_PATH processed.$ID.pre.tar.gz
+#$JETS3T_HOME/bin/synchronize.sh --nodelete UP $S3_UPLOAD_PATH processed.$ID.post.tar.gz
 
 bamSrcSize=$(stat -c %s $BAM)
 bamDestSize=$(s3cmd ls $S3_UPLOAD_PATH$BAM|awk '{print $3}')
@@ -97,14 +115,11 @@ echo "Dest"$BAM"="$bamDestSize
 echo $BAI"="$baiSrcSize
 echo "Dest " $BAI"="$baiDestSize
 
-if [ "$bamSrcSize" == "$bamDestSize" -a "$baiSrcSize" == "$baiDestSize" ]; then
-        rm -rf $WORK
-        echo "Removed "$WORK
-else
-    echo "Uploading to S3 does not result in matching bam and bai file sizes"
-fi
-
-
-
+#if [ "$bamSrcSize" == "$bamDestSize" -a "$baiSrcSize" == "$baiDestSize" ]; then
+#        rm -rf $WORK
+#        echo "Removed "$WORK
+#else
+#    echo "Uploading to S3 does not result in matching bam and bai file sizes"
+#fi
 
 echo "Done."

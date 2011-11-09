@@ -66,6 +66,17 @@ python $HOME/bin/s3_down_file.py -b $s3_bucket -s $s3_fq2_path -d $DATA -f end2.
 echo "Running lane-level pipeline..."
 $QUEUE -S $HOME/opt/GATK-Lilly/public/scala/qscript/org/broadinstitute/sting/queue/qscripts/LaneProcessingPipeline.scala -bwa $HOME/opt/bwa-0.5.9/bwa -R $RESOURCES/ucsc.hg19.fasta -f1 $DATA/end1.fq.gz -f2 $DATA/end2.fq.gz -name $BAM -rg "@RG\tID:$ID\tSM:$SM\tLB:$LB\tPU:$PU\tPL:$PL\tCN:$CN\tDT:$DT" -threads $CPUS -run
 
+
+#fix read names for each lane level data, the bai name may not be right, added the following 6 lines
+#$GATK -T PrintReads -R $RESOURCES/ucsc.hg19.fasta -I $BAM -addrg -o $Fixed_BAM
+#$HOME/opt/samtools-0.1.17/samtools index $Fixed_BAM
+
+#mv $BAM $BAM.tmp
+#mv $BAI $BAI.tmp
+
+#mv $Fixed_BAM $BAM
+#mv $Fixed_BAM.bai $BAI
+
 echo "Uploading results..."
 
 python $HOME/bin/s3_upload_file.py $s3_bucket $BAM $s3_path 

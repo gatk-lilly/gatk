@@ -94,8 +94,8 @@ sub create_condor_submission_file {
 	open(CSF, ">$submission_file");
 
 	print CSF "Universe = vanilla\n";
-	#print CSF "Requirements = (OpSys =?= \"LINUX\") && (SlotID == 1)\n";
-	print CSF "Requirements = (OpSys =?= \"LINUX\")\n";
+	print CSF "Requirements = (OpSys =?= \"LINUX\") && (SlotID == 1)\n";
+	#print CSF "Requirements = (OpSys =?= \"LINUX\")\n";
 	print CSF "Executable = $ENV{'HOME'}/opt/GATK-Lilly/public/shell/process_one_sample.sh\n";
 	print CSF "Arguments = " . join(" ", @args) . "\n";
 	print CSF "input = /dev/null\n";
@@ -108,7 +108,8 @@ sub create_condor_submission_file {
 	print CSF "notify_user = jian.wang\@lilly.com\n";
 	print CSF "should_transfer_files = YES\n";
 	print CSF "when_to_transfer_output = ON_EXIT_OR_EVICT\n";
-	print CSF "Queue\n";
+	print CSF "getenv = True\n";
+        print CSF "Queue\n";
 
 	close(CSF);
 

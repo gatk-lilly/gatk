@@ -80,6 +80,7 @@ sub create_condor_submission_file {
 	my $submission_file = "$jobdir/$logprefix"."submit";
 	my $log_file = "$jobdir/$logprefix"."log.out";
 
+
 	if (! -e $jobdir) {
 		mkpath($jobdir);
 	}
@@ -98,11 +99,12 @@ sub create_condor_submission_file {
 	print CSF "notification = Error\n";
 	print CSF "should_transfer_files = YES\n";
 	print CSF "when_to_transfer_output = ON_EXIT_OR_EVICT\n";
+	print CSF "getenv = True\n";
 	print CSF "Queue\n";
 
 	close(CSF);
 
-	return ($submission_file, $log_file, $has_run_before);
+	return $submission_file;
 }
 
 sub get_s3_contents {

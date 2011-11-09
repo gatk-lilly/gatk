@@ -60,10 +60,11 @@ do
 	BAI_BASENAME=`basename $LANE_BAI`
 
     s3_bam_file=`echo $LANE_BAM | sed 's/s3:\/\/[A-Za-z_\-]*\///'`
-    python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s $s3_bam_file -d $DATA
-        
-    s3_bai_file=`echo $LANE_BAI | sed 's/s3:\/\/[A-Za-z_\-]*\///'`
-    python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s $s3_bai_file -d $DATA
+    python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s $s3_bam_file -d $TMP_DATA
+    
+    #comment out for now becasue it has to be reindex after fixing the reads
+    #s3_bai_file=`echo $LANE_BAI | sed 's/s3:\/\/[A-Za-z_\-]*\///'`
+    #python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s $s3_bai_file -d $TMP_DATA
 
 	#fix the readname here in the current set, move this up to step one in the future
     $GATK -T PrintReads -R $RESOURCES/ucsc.hg19.fasta -I $TMP_DATA/$BAM_BASENAME -addrg --disable_bam_indexing -o $DATA/$BAM_BASENAME
@@ -83,7 +84,7 @@ s3_bucket=`echo $S3_UPLOAD_PATH | sed "s/\/.*//"`
 IFS=":"
 for CHR in $CHR_LIST
 do
-    export $OUT=$WORK/$CHR/aggregation
+    export OUT=$WORK/$CHR/aggregation
     mkdir -p $OUT
     name=$SM.$CHR
     BAM=$OUT/$name.pre_analysis.bam

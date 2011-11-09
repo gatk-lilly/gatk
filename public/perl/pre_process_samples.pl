@@ -176,8 +176,8 @@ foreach my $sample (keys(%samples)) {
     foreach my $chr ("chr22", "chr21", "chr20", "chr19", "chr18", "chr17", "chr16", "chr15", "chr14", "chr13", "chr12", "chr11", "chr10", "chr9", "chr8", "chr7", "chr6", "chr5", "chr4", "chr3", "chr2", "chr1", "chrX", "chrY") {
         my $s3samplebam = "$args{'s3_upload_path'}/$sample/$sample.$chr.pre_analysis.bam";
         if (!$s3{$s3samplebam}) {
-        $chr_list .= ":$chr"
-
+            $chr_list .= ":$chr"
+            $chr_list =~ s/^\://;
         }
     }
 

@@ -46,12 +46,10 @@ cd $WORK
 
 echo "Extracting NGS resources..."
 
-#s3cmd sync s3://$S3_BUCKET/resources $WORK/
+python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s resources/resources.tar.gz -d $RESOURCES -f resources.tar.gz
+python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s resources/variant_calling_resources.tar.gz  -d $RESOURCES -f variant_calling_resources.tar.gz
 
-#python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s resources/resources.tar.gz -d $RESOURCES -f resources.tar.gz
-#python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s resources/variant_calling_resources.tar.gz  -d $RESOURCES -f variant_calling_resources.tar.gz
-
-#gunzip -c $RESOURCES/resources.tar.gz | tar -C $RESOURCES -xf -
+gunzip -c $RESOURCES/resources.tar.gz | tar -C $RESOURCES -xf -
 
 echo "Downloading lane BAMs..."
 for LANE_BAM in $LANES
@@ -60,18 +58,12 @@ do
 
 	BAM_BASENAME=`basename $LANE_BAM`
 	BAI_BASENAME=`basename $LANE_BAI`
- 
-    echo $LANE_BAM
 
     s3_bam_file=`echo $LANE_BAM | sed 's/s3:\/\/[A-Za-z_\-]*\///'`
-    echo "$HOME/bin/s3_down_file.py -b $S3_BUCKET -s $s3_bam_file -d $DATA"
-    #python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s $s3_bam_file -d $DATA
+    python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s $s3_bam_file -d $DATA
         
     s3_bai_file=`echo $LANE_BAI | sed 's/s3:\/\/[A-Za-z_\-]*\///'`
-    #python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s $s3_bai_file -d $DATA
-
-	s3cmd sync $LANE_BAM $TMP_DATA/$BAM_BASENAME
-	#s3cmd sync $LANE_BAI $TMP_DATA/$BAI_BASENAME
+    python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s $s3_bai_file -d $DATA
 
 	#fix the readname here in the current set, move this up to step one in the future
     $GATK -T PrintReads -R $RESOURCES/ucsc.hg19.fasta -I $TMP_DATA/$BAM_BASENAME -addrg --disable_bam_indexing -o $DATA/$BAM_BASENAME
@@ -96,7 +88,7 @@ do
     name=$SM.$CHR
     BAM=$OUT/$name.pre_analysis.bam
     BAI=$OUT/$name.pre_analysis.bai
-    $GATK -T PrintReads -R $RESOURCES/ucsc.hg19.fasta -L $tCHR -I $BAM_LIST --disable_bam_indexing -o $BAM
+    $GATK -T PrintReads -R $RESOURCES/ucsc.hg19.fasta -L $CHR -I $BAM_LIST --disable_bam_indexing -o $BAM
     $HOME/opt/samtools-0.1.17/samtools index $BAM
 
     echo "Uploading results..."

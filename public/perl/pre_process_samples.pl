@@ -203,7 +203,7 @@ foreach my $sample (keys(%samples)) {
 		my $submission_cmd = "condor_submit $submission_file";
 
 		if ($args{'run'} == 0) {
-			print "Simulating dispatch of sample-level pipeline for $sample $chr_list ($submission_file)\n";
+			print "Simulating dispatch of sample-level pipeline for $sample with the list of chrs as $chr_list ($submission_file)\n";
 			print "$submission_cmd\n";
 		} else {
 			print "Dispatching sample-level pipeline for $sample $chr_list ($submission_file)\n";

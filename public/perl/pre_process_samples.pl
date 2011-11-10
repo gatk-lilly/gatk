@@ -176,8 +176,10 @@ foreach my $sample (keys(%samples)) {
     foreach my $chr ("chr22", "chr21", "chr20", "chr19", "chr18", "chr17", "chr16", "chr15", "chr14", "chr13", "chr12", "chr11", "chr10", "chr9", "chr8", "chr7", "chr6", "chr5", "chr4", "chr3", "chr2", "chr1", "chrX", "chrY") {
         my $s3samplebam = "$args{'s3_upload_path'}/$sample/$sample.$chr.pre_analysis.bam";
         if (!$s3{$s3samplebam}) {
+
             $chr_list .= ":$chr";
             $chr_list =~ s/^\://;
+
         }
     }
 
@@ -192,7 +194,7 @@ foreach my $sample (keys(%samples)) {
 		# 1                     0                         0                    dispatched but never started
 		# 1                     1                         0                    dispatched still running
 		# 1                     0                         1                    can't happen
-		# 1                     1                         1                    job dispatched and finished
+		# 0                     1                         1                    job dispatched and finished
 		# 0                     0                         0                    never run
 		# 0                     1                         0                    can't happen
 		# 0                     0                         1                    can't happen

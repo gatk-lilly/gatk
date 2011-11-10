@@ -62,7 +62,8 @@ do
     s3_bai_file=`echo $LANE_BAI | sed 's/s3:\/\/[A-Za-z_\-]*\///'`
     python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s $s3_bai_file -d $TMP_DATA
 
-	#fix the readname here in the current set, move this up to step one in the future allowing parallel processing
+   
+    #fix the readname here in the current set, move this up to step one in the future allowing parallel processing
     $GATK -T PrintReads -R $RESOURCES/ucsc.hg19.fasta -I $TMP_DATA/$BAM_BASENAME -addrg --disable_bam_indexing -o $DATA/$BAM_BASENAME
     $HOME/opt/samtools-0.1.17/samtools index $DATA/$BAM_BASENAME
 
@@ -77,7 +78,7 @@ s3_bucket=`echo $S3_UPLOAD_PATH | sed "s/\/.*//"`
 IFS=":"
 for CHR in $CHR_LIST
 do
-    export $OUT=$WORK/$CHR/aggregation
+    export OUT=$WORK/$CHR/aggregation
     mkdir -p $OUT
     name=$SM.$CHR
     BAM=$OUT/$name.pre_analysis.bam

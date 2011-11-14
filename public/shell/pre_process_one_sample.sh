@@ -19,7 +19,7 @@ export TMP_DATA=$WORK/TMP_DATA
 export DATA=$WORK/data
 export LISTS=$WORK/lists
 
-export GATK="java -Djava.io.tmpdir=$TMP -jar $HOME/opt/GATK-Lilly/dist/GenomeAnalysisTK.jar";
+export GATK="$HOME/opt/jdk1.6.0_27/bin/java -Djava.io.tmpdir=$TMP -jar $HOME/opt/GATK-Lilly/dist/GenomeAnalysisTK.jar";
 export CPUS=`cat /proc/cpuinfo | grep -c processor`
 
 export BAM_LIST="$LISTS/$SM.bam.list"
@@ -29,21 +29,22 @@ export MERGED_BAM="$WORK/aggregated.$ID.bam"
 s3_bucket=`echo $S3_UPLOAD_PATH | sed "s/\/.*//"`
 
 echo "Creating $WORK directory..."
-rm -rf $WORK
+#rm -rf $WORK
 mkdir -p $WORK
-mkdir $DATA
-mkdir $TMP
-mkdir $LISTS
+mkdir -p $DATA
+mkdir -p $TMP_DATA
+mkdir -p $TMP
+mkdir -p $LISTS
 
 echo "Changing to $WORK directory..."
 cd $WORK
 
 echo "Extracting NGS resources..."
 
-python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s resources/resources.tar.gz -d $RESOURCES -f resources.tar.gz
-python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s resources/variant_calling_resources.tar.gz  -d $RESOURCES -f variant_calling_resources.tar.gz
+#python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s resources/resources.tar.gz -d $RESOURCES -f resources.tar.gz
+#python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s resources/variant_calling_resources.tar.gz  -d $RESOURCES -f variant_calling_resources.tar.gz
 
-gunzip -c $RESOURCES/resources.tar.gz | tar -C $RESOURCES -xf -
+#gunzip -c $RESOURCES/resources.tar.gz | tar -C $RESOURCES -xf -
 
 echo "Downloading lane BAMs..."
 for LANE_BAM in $LANES
@@ -53,19 +54,21 @@ do
 	BAM_BASENAME=`basename $LANE_BAM`
 	BAI_BASENAME=`basename $LANE_BAI`
 
-    echo "Downloading lane bam $LANE_BAM for sample $SM ..."
+    	echo "Downloading lane bam $LANE_BAM for sample $SM ..."
 
     s3_bam_file=`echo $LANE_BAM | sed 's/s3:\/\/[A-Za-z_\-]*\///'`
-    python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s $s3_bam_file -d $TMP_DATA
+#    python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s $s3_bam_file -d $TMP_DATA
 
-    save this until when the readname fix is moved to step one
+    #save this until when the readname fix is moved to step one
     s3_bai_file=`echo $LANE_BAI | sed 's/s3:\/\/[A-Za-z_\-]*\///'`
-    python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s $s3_bai_file -d $TMP_DATA
+#    python $HOME/bin/s3_down_file.py -b $S3_BUCKET -s $s3_bai_file -d $TMP_DATA
 
    
     #fix the readname here in the current set, move this up to step one in the future allowing parallel processing
-    $GATK -T PrintReads -R $RESOURCES/ucsc.hg19.fasta -I $TMP_DATA/$BAM_BASENAME -addrg --disable_bam_indexing -o $DATA/$BAM_BASENAME
-    $HOME/opt/samtools-0.1.17/samtools index $DATA/$BAM_BASENAME
+#    $GATK -T PrintReads -R $RESOURCES/ucsc.hg19.fasta -I $TMP_DATA/$BAM_BASENAME -addrg --disable_bam_indexing -o $DATA/$BAM_BASENAME
+
+	echo "runnning index"
+#    $HOME/opt/samtools-0.1.17/samtools index $DATA/$BAM_BASENAME
 
 done
 find $DATA -name \*.bam > $BAM_LIST
@@ -78,20 +81,35 @@ s3_bucket=`echo $S3_UPLOAD_PATH | sed "s/\/.*//"`
 IFS=":"
 for CHR in $CHR_LIST
 do
-    export OUT=$WORK/$CHR/aggregation
+
+echo "CHR $CHR..."
+
+    export OUT=$WORK/aggregation/$CHR
     mkdir -p $OUT
     name=$SM.$CHR
-    BAM=$OUT/$name.pre_analysis.bam
-    BAI=$OUT/$name.pre_analysis.bai
-    $GATK -T PrintReads -R $RESOURCES/ucsc.hg19.fasta -L $CHR -I $BAM_LIST --disable_bam_indexing -o $BAM
-    $HOME/opt/samtools-0.1.17/samtools index $BAM
+    export BAM=$OUT/$name.pre_analysis.bam
+    export BAI=$OUT/$name.pre_analysis.bai
 
-    echo "Uploading results..."
-    echo "$s3_bucket $BAM $s3_path"
-    echo "$s3_bucket $BAI $s3_path"
+    #echo "$GATK -T PrintReads -R $RESOURCES/ucsc.hg19.fasta -I $BAM_LIST -L $CHR --disable_bam_indexing -o $BAM"
+    echo `env | grep JAVA_HOME` 
+    echo `which java` 
+    echo "running GATK"
+    #$GATK -T PrintReads -R $RESOURCES/ucsc.hg19.fasta -I $BAM_LIST -L $CHR --disable_bam_indexing -o $BAM
 
-    python $HOME/bin/s3_upload_file.py $s3_bucket $BAM $s3_path
-    python $HOME/bin/s3_upload_file.py $s3_bucket $BAI $s3_path
+    echo "$GATK -T PrintReads -help"
+    echo `$GATK -T PrintReads -help`
+
+
+
+    echo "finished GATK for chr $CHR"
+
+    #$HOME/opt/samtools-0.1.17/samtools index $BAM
+
+    #echo "Uploading results..."
+    #echo "$s3_bucket $BAM $s3_path"
+    #echo "$s3_bucket $BAI $s3_path"
+
+    #python $HOME/bin/s3_upload_file.py $s3_bucket $BAM $s3_path
+    #python $HOME/bin/s3_upload_file.py $s3_bucket $BAI $s3_path
 
 done
-

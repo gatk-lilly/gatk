@@ -73,11 +73,13 @@ sub getArgs {
 }
 
 sub create_condor_submission_file {
-	my ($id, $chr_list, @args) = @_;
+	my ($id, $chr, @args) = @_;
 
+	#my $jobdir = ".condor_submit/$id/$chr";
 	my $jobdir = ".condor_submit";
-	my $logprefix = $id."_";
+	my $logprefix = $id."_".$chr."_";
 	my $submission_file = "$jobdir/$logprefix"."submit";
+	#my $log_file = "$jobdir/log.out";
 	my $log_file = "$jobdir/$logprefix"."log.out";
 	my $has_run_before = 0;
 
@@ -92,9 +94,9 @@ sub create_condor_submission_file {
 	open(CSF, ">$submission_file");
 
 	print CSF "Universe = vanilla\n";
-	print CSF "Requirements = (OpSys =?= \"LINUX\") && (SlotID == 1)\n";
-	#print CSF "Requirements = (OpSys =?= \"LINUX\")\n";
-	print CSF "Executable = $ENV{'HOME'}/opt/GATK-Lilly/public/shell/pre_process_one_sample.sh\n";
+	#print CSF "Requirements = (OpSys =?= \"LINUX\") && (SlotID == 1)\n";
+	print CSF "Requirements = (OpSys =?= \"LINUX\")\n";
+	print CSF "Executable = $ENV{'HOME'}/opt/GATK-Lilly/public/shell/process_one_sample_v2.sh\n";
 	print CSF "Arguments = " . join(" ", @args) . "\n";
 	print CSF "input = /dev/null\n";
 	print CSF "output = $jobdir/$logprefix"."log.out\n";
@@ -107,7 +109,7 @@ sub create_condor_submission_file {
 	print CSF "should_transfer_files = YES\n";
 	print CSF "when_to_transfer_output = ON_EXIT_OR_EVICT\n";
 	print CSF "getenv = True\n";
-    print CSF "Queue\n";
+        print CSF "Queue\n";
 
 	close(CSF);
 
@@ -129,7 +131,7 @@ sub get_s3_contents {
 	return %s3;
 }
 
-my %args = &getArgs("s3_manifest" => undef, "s3_lane_path" => undef, "s3_upload_path" => undef, "run" => 0);
+my %args = &getArgs("s3_manifest" => undef, "s3_lane_path" => undef, "s3_chr_path" => undef, "s3_upload_path" => undef, "run" => 0);
 
 my ($s3_root) = $args{'s3_upload_path'} =~ /(s3:\/\/.+?\/)/;
 my %s3 = &get_s3_contents($s3_root);
@@ -162,57 +164,65 @@ foreach my $entry (@entries) {
 	push(@{$samples{$entry{'sample'}}}, $lanebam);
 }
 
-foreach my $sample (keys(%samples)) {
-	my @s3lanebams = @{$samples{$sample}};
-	my $allLanesPresent = 1;
-	foreach my $s3lanebam (@s3lanebams) {
-		if (!exists($s3{$s3lanebam})) {
-			$allLanesPresent = 0;
-		}
-	}
+foreach my $chr ("chr22", "chr21", "chr20", "chr19", "chr18", "chr17", "chr16", "chr15", "chr14", "chr13", "chr12", "chr11", "chr10", "chr9", "chr8", "chr7", "chr6", "chr5", "chr4", "chr3", "chr2", "chr1", "chrX", "chrY") {
+	foreach my $sample (keys(%samples)) {
+		my $s3samplebam = "$args{'s3_upload_path'}/$sample/$sample.$chr.analysis_ready.bam";
 
-    #create chrom list
-    my $chr_list = "";
-    foreach my $chr ("chr22", "chr21", "chr20", "chr19", "chr18", "chr17", "chr16", "chr15", "chr14", "chr13", "chr12", "chr11", "chr10", "chr9", "chr8", "chr7", "chr6", "chr5", "chr4", "chr3", "chr2", "chr1", "chrX", "chrY") {
-        my $s3samplebam = "$args{'s3_upload_path'}/$sample/$sample.$chr.pre_analysis.bam";
-        if (!$s3{$s3samplebam}) {
-
-            $chr_list .= ":$chr";
-            $chr_list =~ s/^\://;
-
-        }
-    }
-
-	#here the s3_upload_path could be s3://ngs-cloud/temp_samples holding pre_analysis chromosome level bams
-	my @cmdargs = ($sample, $chr_list, $s3_root, $args{'s3_upload_path'}, @s3lanebams);
-	my ($submission_file, $log_file, $has_run_before) = &create_condor_submission_file($sample, $chr_list, @cmdargs);
-
-		#print "Log file: $log_file\n";
-		#print "Size: " . (-s $log_file) . "\n";
-
-	    # has run before        log file exists           log size is 0        meaning
-		# 1                     0                         0                    dispatched but never started
-		# 1                     1                         0                    dispatched still running
-		# 1                     0                         1                    can't happen
-		# 0                     1                         1                    job dispatched and finished
-		# 0                     0                         0                    never run
-		# 0                     1                         0                    can't happen
-		# 0                     0                         1                    can't happen
-
-#	if ($has_run_before == 1 && -e $log_file && -s $log_file == 0) {
-#		print "Skipping sample-level pipeline for $sample $chr_list because the job is already running.\n";
-#	} else {
-		my $submission_cmd = "condor_submit $submission_file";
-
-		if ($args{'run'} == 0) {
-			print "Simulating dispatch of sample-level pipeline for $sample with the list of chrs as $chr_list ($submission_file)\n";
-			print "$submission_cmd\n";
+		if ($s3{$s3samplebam}) {
+			print "Skipping sample-level pipeline for $sample $chr because the result is already present in S3.\n";
 		} else {
-			print "Dispatching sample-level pipeline for $sample $chr_list ($submission_file)\n";
-			system($submission_cmd);
-		}
-#	}
+			my @cmdargs = ($sample, $chr, $s3_root, $args{'s3_chr_path'}, $args{'s3_upload_path'} );
+			my ($submission_file, $log_file, $has_run_before) = &create_condor_submission_file($sample, $chr, @cmdargs);
 
+			#print "Log file: $log_file\n";
+			#print "Size: " . (-s $log_file) . "\n";
+
+			# has run before        log file exists           log size is 0        meaning
+			# 1                     0                         0                    dispatched but never started
+			# 1                     1                         0                    dispatched still running
+			# 1                     0                         1                    can't happen
+			# 1                     1                         1                    job dispatched and finished
+			# 0                     0                         0                    never run
+			# 0                     1                         0                    can't happen
+			# 0                     0                         1                    can't happen
+
+			if ($has_run_before == 1 && -e $log_file && -s $log_file == 0) {
+				print "Skipping sample-level pipeline for $sample $chr because the job is already running.\n";
+			} else {
+				my $submission_cmd = "condor_submit $submission_file";
+
+				if ($args{'run'} == 0) {
+					print "Simulating dispatch of sample-level pipeline for $sample $chr ($submission_file)\n";
+					print "$submission_cmd\n";
+				} else {
+					print "Dispatching sample-level pipeline for $sample $chr ($submission_file)\n";
+					system($submission_cmd);
+				}
+			}
+		}
+	
+	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

@@ -51,8 +51,6 @@ cd $WORK
 echo "Extracting NGS resources"
  
 python $HOME/bin/s3_down_file.py -b $s3_bucket -s resources/resources.tar.gz -d $RESOURCES  
-python $HOME/bin/s3_down_file.py -b $s3_bucket -s resources/variant_calling_resources.tar.gz  -d $RESOURCES 
-
 gunzip -c $RESOURCES/resources.tar.gz | tar -C $RESOURCES -xf -
 
 echo "Downloading fastqs..."
@@ -68,14 +66,14 @@ $QUEUE -S $HOME/opt/GATK-Lilly/public/scala/qscript/org/broadinstitute/sting/que
 
 
 #fix read names for each lane level data, the bai name may not be right, added the following 6 lines
-#$GATK -T PrintReads -R $RESOURCES/ucsc.hg19.fasta -I $BAM -addrg -o $Fixed_BAM
-#$HOME/opt/samtools-0.1.17/samtools index $Fixed_BAM
+$GATK -T PrintReads -R $RESOURCES/ucsc.hg19.fasta -I $BAM -addrg -o Fixed_BAM
+$HOME/opt/samtools-0.1.17/samtools index Fixed_BAM
 
-#mv $BAM $BAM.tmp
-#mv $BAI $BAI.tmp
+mv $BAM $BAM.tmp
+mv $BAI $BAI.tmp
 
-#mv $Fixed_BAM $BAM
-#mv $Fixed_BAM.bai $BAI
+mv Fixed_BAM $BAM
+mv Fixed_BAM.bai $BAI
 
 echo "Uploading results..."
 

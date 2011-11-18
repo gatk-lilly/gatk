@@ -92,8 +92,8 @@ sub create_condor_submission_file {
 	open(CSF, ">$submission_file");
 
 	print CSF "Universe = vanilla\n";
-	print CSF "Requirements = (OpSys =?= \"LINUX\") && (SlotID == 1)\n";
-	#print CSF "Requirements = (OpSys =?= \"LINUX\")\n";
+	#print CSF "Requirements = (OpSys =?= \"LINUX\") && (SlotID == 1)\n";
+	print CSF "Requirements = (OpSys =?= \"LINUX\")\n";
 	print CSF "Executable = $ENV{'HOME'}/opt/GATK-Lilly/public/shell/pre_process_one_sample.sh\n";
 	print CSF "Arguments = " . join(" ", @args) . "\n";
 	print CSF "input = /dev/null\n";
